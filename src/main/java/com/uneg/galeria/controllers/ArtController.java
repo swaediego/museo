@@ -3,6 +3,7 @@ package com.uneg.galeria.controllers;
 import com.uneg.galeria.models.Art;
 import com.uneg.galeria.services.ArtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/arts")
 @CrossOrigin(origins = "http://localhost:3000")
-public class ArtController {
+public  class ArtController {
 
     @Autowired
     private ArtService artService;
@@ -48,4 +49,23 @@ public class ArtController {
     public ResponseEntity<Art> create(@RequestBody Art art) {
         return ResponseEntity.ok(artService.guardarObra(art));
     }
+
+    @PatchMapping("/{id}/reservar")
+    public ResponseEntity<?> reservarObra(@PathVariable Long id) {
+        return artService.obtenerPorId(id)
+                .map(art -> {
+                    if (!"Disponible".equalsIgnoreCase(art.getEstatus())) {
+                        // Retornamos un error 409 Conflict con un mensaje
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body("La obra no está disponible (Estatus: " + art.getEstatus() + ")");
+                    }
+
+                    art.setEstatus("Reservada");
+                    artService.guardarObra(art);
+                    return ResponseEntity.ok(art);
+                })
+                // El orElse debe devolver el mismo tipo: ResponseEntity<?>
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
 }
+
