@@ -72,18 +72,7 @@ public class BuyerController {
         public void setRespuestas(List<String> respuestas) { this.respuestas = respuestas; }
     }
 
-    // 4. Login simple para Comprador
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        // Esta es la lógica que tenías en la función vieja:
-        // 1. Buscamos por login
-        // 2. Filtramos por password
-        // 3. Mapeamos a la respuesta
-        return buyerService.buscarPorLogin(request.getLogin())
-                .filter(b -> b.getPassword().equals(request.getPassword()))
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
-    }
+
     //5. para admins, obtener todos los compradores
     @GetMapping
     public List<Buyer> getAllBuyers() {
