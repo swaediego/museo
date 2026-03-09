@@ -1,8 +1,6 @@
 package com.uneg.galeria.services;
 
-
 import com.uneg.galeria.models.Buyer;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +11,8 @@ public interface BuyerService {
     Optional<Buyer> buscarPorLogin(String login);
     List<Buyer> listarTodos();
     Buyer login(String login, String password);
+    // Métodos nuevos necesarios para los CRUDS y actualizaciones
+    Optional<Buyer> obtenerPorId(Long id);
+    Buyer guardarComprador(Buyer buyer);
+    void eliminarComprador(Long id);
 }

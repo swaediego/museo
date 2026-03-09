@@ -102,4 +102,23 @@ public class BuyerController {
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
     }
+
+    // 7. Actualizar datos del perfil
+    @PatchMapping("/{id}")
+    public ResponseEntity<Buyer> updateProfile(@PathVariable Long id, @RequestBody Buyer updatedBuyer) {
+        return buyerService.obtenerPorId(id)
+                .map(existingBuyer -> {
+                    // Actualizamos solo los campos necesarios
+                    if (updatedBuyer.getNombre() != null) existingBuyer.setNombre(updatedBuyer.getNombre());
+                    if (updatedBuyer.getApellido() != null) existingBuyer.setApellido(updatedBuyer.getApellido());
+                    if (updatedBuyer.getEmail() != null) existingBuyer.setEmail(updatedBuyer.getEmail());
+                    if (updatedBuyer.getTelefono() != null) existingBuyer.setTelefono(updatedBuyer.getTelefono());
+                    if (updatedBuyer.getDireccionEnvio() != null) existingBuyer.setDireccionEnvio(updatedBuyer.getDireccionEnvio());
+                    if (updatedBuyer.getPassword() != null) existingBuyer.setPassword(updatedBuyer.getPassword());
+
+                    buyerService.guardarComprador(existingBuyer); // Asegúrate de tener este método en tu Service
+                    return ResponseEntity.ok(existingBuyer);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

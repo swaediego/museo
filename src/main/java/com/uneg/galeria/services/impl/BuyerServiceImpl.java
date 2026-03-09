@@ -134,8 +134,25 @@ public class BuyerServiceImpl implements BuyerService {
     @Override
     public Buyer login(String login, String password) {
         // Buscamos al comprador por su login de usuario
-        return buyerRepository.findByLogin(login) // Asegúrate de tener este método en el Repo
+        return buyerRepository.findByLogin(login)
                 .filter(buyer -> buyer.getPassword().equals(password))
                 .orElseThrow(() -> new RuntimeException("Credenciales incorrectas o usuario no encontrado"));
+    }
+
+    @Override
+    public Buyer guardarComprador(Buyer buyer) {
+        // Lógica importante: Si la contraseña ha cambiado, deberías encriptarla aquí
+        // antes de llamar a buyerRepository.save(buyer);
+        return buyerRepository.save(buyer);
+    }
+
+    @Override
+    public Optional<Buyer> obtenerPorId(Long id) {
+        return buyerRepository.findById(id);
+    }
+
+    @Override
+    public void eliminarComprador(Long id) {
+        buyerRepository.deleteById(id);
     }
 }
