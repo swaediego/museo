@@ -153,7 +153,7 @@ public class BuyerServiceImpl implements BuyerService {
 
     @Override
     public List<Buyer> listarCompradores(boolean soloActivos) {
-        return soloActivos ? buyerRepository.findByActivoTrue() : buyerRepository.findAll();
+        return soloActivos ? buyerRepository.findByActivoTrue() : buyerRepository.findAllBuyersWithoutFilter();
     }
 
     @Override

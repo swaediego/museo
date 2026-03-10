@@ -2,6 +2,7 @@ package com.uneg.galeria.repositories;
 
 import com.uneg.galeria.models.Buyer;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,4 +23,7 @@ public interface BuyerRepository extends JpaRepository<Buyer, Long> {
 
     List<Buyer> findAll();
     List<Buyer> findByActivoTrue();
+
+    @Query("SELECT b FROM Buyer b")
+    List<Buyer> findAllBuyersWithoutFilter();
 }
