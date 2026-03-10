@@ -111,6 +111,15 @@ public class BuyerController {
         return ResponseEntity.noContent().build();
     }
 
+
+    //9. hace un soft Delete y solo desactiva el buyer
+    @PatchMapping("/{id}/desactivar")
+    public ResponseEntity<Void> desactivarBuyer(@PathVariable Long id) {
+        buyerService.desactivarComprador(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    //10. nos da todos los Compradores ya sea que este o no activos, dependiendo del filtro del front
     @GetMapping
     public List<Buyer> getAllBuyers(@RequestParam(defaultValue = "true") boolean soloActivos) {
         return buyerService.listarCompradores(soloActivos);
