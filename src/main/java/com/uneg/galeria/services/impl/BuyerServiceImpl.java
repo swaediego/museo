@@ -9,6 +9,8 @@ import com.uneg.galeria.repositories.BuyerRepository;
 import com.uneg.galeria.repositories.MembershipPaymentRepository;
 import com.uneg.galeria.repositories.UserAnswersRepository;
 import com.uneg.galeria.services.BuyerService;
+
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,8 @@ import java.util.Random;
 
 @Service
 public class BuyerServiceImpl implements BuyerService {
+
+    @Autowired private EntityManager entityManager;
 
     @Autowired
     private BuyerRepository buyerRepository;
@@ -153,13 +157,18 @@ public class BuyerServiceImpl implements BuyerService {
 
     @Override
     public List<Buyer> listarCompradores(boolean soloActivos) {
-        return soloActivos ? buyerRepository.findByActivoTrue() : buyerRepository.findAllBuyersWithoutFilter();
+        System.out.println("DEBUG: Entrando a listarCompradores con valor: " + soloActivos);
+        if (soloActivos) {
+            return buyerRepository.findByActivoTrue();
+        } else {
+            return buyerRepository.findAll();
+        }
     }
 
     @Override
     public void desactivarComprador(Long id) {
-        Buyer buyer = buyerRepository.findById(id).orElseThrow();
-        buyer.setActivo(false); //
+        Buyer buyer = buyerRepository.findById(id).orElseThrow(() -> new RuntimeException("Comprador no encontrado con ID: " + id));
+        buyer.setActivo(!buyer.getActivo());
         buyerRepository.save(buyer);
     }
 }

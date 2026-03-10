@@ -17,4 +17,6 @@ public interface BuyerService {
     void desactivarComprador(Long id);
     List<Buyer> listarCompradores(boolean soloActivos);
 
+
+
 }

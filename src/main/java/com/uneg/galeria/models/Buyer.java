@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 @PrimaryKeyJoinColumn(name = "id_usuario")
 @Data
 @EqualsAndHashCode(callSuper = true)
+
 public class Buyer extends User {
 
     @Column(name = "datos_tarjeta_mask", nullable = false)

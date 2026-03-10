@@ -122,6 +122,7 @@ public class BuyerController {
     //10. nos da todos los Compradores ya sea que este o no activos, dependiendo del filtro del front
     @GetMapping
     public List<Buyer> getAllBuyers(@RequestParam(defaultValue = "true") boolean soloActivos) {
+        System.out.println("DEBUG: El filtro soloActivos recibido es: " + soloActivos);
         return buyerService.listarCompradores(soloActivos);
     }
 }

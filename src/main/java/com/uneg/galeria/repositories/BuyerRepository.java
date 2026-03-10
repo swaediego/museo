@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+
 import java.util.List;
 import java.util.Optional;
 
@@ -21,9 +22,12 @@ public interface BuyerRepository extends JpaRepository<Buyer, Long> {
     boolean existsByLogin(String login);
     boolean existsByEmail(String email);
 
-    List<Buyer> findAll();
-    List<Buyer> findByActivoTrue();
 
     @Query("SELECT b FROM Buyer b")
-    List<Buyer> findAllBuyersWithoutFilter();
-}
+    List<Buyer> findAllBuyersIgnoringStatus();
+
+    // Filtro explícito
+    @Query("SELECT b FROM Buyer b WHERE b.activo = true")
+    List<Buyer> findByActivoTrue();
+
+    }
