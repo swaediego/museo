@@ -14,5 +14,5 @@ public interface BuyerService {
     // Métodos nuevos necesarios para los CRUDS y actualizaciones
     Optional<Buyer> obtenerPorId(Long id);
     Buyer guardarComprador(Buyer buyer);
-    void eliminarComprador(Long id);
+    void desactivarComprador(Long id);
 }

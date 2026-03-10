@@ -152,7 +152,9 @@ public class BuyerServiceImpl implements BuyerService {
     }
 
     @Override
-    public void eliminarComprador(Long id) {
-        buyerRepository.deleteById(id);
+    public void desactivarComprador(Long id) {
+        Buyer buyer = buyerRepository.findById(id).orElseThrow();
+        buyer.setActivo(false); //
+        buyerRepository.save(buyer);
     }
 }

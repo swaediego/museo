@@ -114,7 +114,7 @@ public class BuyerController {
     // 8. Eliminar comprador (para uso exclusivo del Admin)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBuyer(@PathVariable Long id) {
-        buyerService.eliminarComprador(id);
+        buyerService.desactivarComprador(id);
         return ResponseEntity.noContent().build();
     }
 }

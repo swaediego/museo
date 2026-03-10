@@ -9,14 +9,13 @@ import java.util.List;
 @Service
 public class ArtistService {
 
-    @Autowired
-    private ArtistRepository artistRepository;
+    @Autowired private ArtistRepository artistRepository;
 
-    public List<Artist> getAllArtists() {
-        return artistRepository.findAll();
-    }
+    public List<Artist> getAllArtists() { return artistRepository.findAll(); }
 
-    public Artist getArtistById(Long id) {
-        return artistRepository.findById(id).orElse(null);
-    }
+    public Artist getArtistById(Long id) { return artistRepository.findById(id).orElse(null); }
+
+    public Artist saveArtist(Artist artist) { return artistRepository.save(artist); }
+
+    public void deleteArtist(Long id) { artistRepository.deleteById(id); }
 }

@@ -2,7 +2,7 @@ package com.uneg.galeria.controllers;
 
 import com.uneg.galeria.models.Admin;
 import com.uneg.galeria.models.User;
-import com.uneg.galeria.repositories.UserRepository; // Necesitarás este repo base
+import com.uneg.galeria.repositories.UserRepository;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth") // Ruta dedicada para temas de sesión
+@RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
 
