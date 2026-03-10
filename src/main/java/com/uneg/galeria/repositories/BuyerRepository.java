@@ -3,6 +3,8 @@ package com.uneg.galeria.repositories;
 import com.uneg.galeria.models.Buyer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +19,7 @@ public interface BuyerRepository extends JpaRepository<Buyer, Long> {
     // 3. Verificar si ya existe un login o email antes de registrar (Validación)
     boolean existsByLogin(String login);
     boolean existsByEmail(String email);
+
+    List<Buyer> findAll();
+    List<Buyer> findByActivoTrue();
 }

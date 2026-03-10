@@ -117,4 +117,9 @@ public class BuyerController {
         buyerService.desactivarComprador(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping
+    public List<Buyer> getAllBuyers(@RequestParam(defaultValue = "true") boolean soloActivos) {
+        return buyerService.listarCompradores(soloActivos);
+    }
 }

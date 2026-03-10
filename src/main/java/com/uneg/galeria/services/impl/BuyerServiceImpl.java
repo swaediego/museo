@@ -152,6 +152,11 @@ public class BuyerServiceImpl implements BuyerService {
     }
 
     @Override
+    public List<Buyer> listarCompradores(boolean soloActivos) {
+        return soloActivos ? buyerRepository.findByActivoTrue() : buyerRepository.findAll();
+    }
+
+    @Override
     public void desactivarComprador(Long id) {
         Buyer buyer = buyerRepository.findById(id).orElseThrow();
         buyer.setActivo(false); //

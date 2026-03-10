@@ -15,4 +15,6 @@ public interface BuyerService {
     Optional<Buyer> obtenerPorId(Long id);
     Buyer guardarComprador(Buyer buyer);
     void desactivarComprador(Long id);
+    List<Buyer> listarCompradores(boolean soloActivos);
+
 }
