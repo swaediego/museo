@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/arts")
@@ -52,20 +53,17 @@ public  class ArtController {
 
     @PatchMapping("/{id}/reservar")
     public ResponseEntity<?> reservarObra(@PathVariable Long id) {
-        return artService.obtenerPorId(id)
-                .map(art -> {
-                    if (!"Disponible".equalsIgnoreCase(art.getEstatus())) {
-                        // Retornamos un error 409 Conflict con un mensaje
-                        return ResponseEntity.status(HttpStatus.CONFLICT)
-                                .body("La obra no está disponible (Estatus: " + art.getEstatus() + ")");
-                    }
+        Optional<Art> artOpt = artService.obtenerPorId(id);
+        if (artOpt.isEmpty()) return ResponseEntity.notFound().build();
 
-                    art.setEstatus("Reservada");
-                    artService.guardarObra(art);
-                    return ResponseEntity.ok(art);
-                })
-                // El orElse debe devolver el mismo tipo: ResponseEntity<?>
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        Art art = artOpt.get();
+        if (!"Disponible".equalsIgnoreCase(art.getEstatus())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Obra no disponible");
+        }
+
+        art.setEstatus("Reservada");
+        artService.guardarObra(art); // Esto es seguro porque 'art' ya tiene todos los datos de la BD
+        return ResponseEntity.ok(art);
     }
 }
 
