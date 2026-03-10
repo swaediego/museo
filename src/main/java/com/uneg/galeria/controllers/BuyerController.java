@@ -72,13 +72,6 @@ public class BuyerController {
         public void setRespuestas(List<String> respuestas) { this.respuestas = respuestas; }
     }
 
-
-    //5. para admins, obtener todos los compradores
-    @GetMapping
-    public List<Buyer> getAllBuyers() {
-        return buyerService.listarTodos();
-    }
-
     //6. DTO para no dar todo el objeto User
     public static class LoginRequest {
         private String login;
