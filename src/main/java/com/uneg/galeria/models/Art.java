@@ -23,7 +23,7 @@ public class Art {
     private Double precioBase;
 
     @Column(name = "fecha_creacion", nullable = false)
-    private LocalDate fechaCreacion;
+    private Integer fechaCreacion;
 
     @Column(length = 20)
     private String estatus = "Disponible"; // Puede ser: Disponible, Reservada, Vendida

@@ -111,5 +111,12 @@ public  class ArtController {
     public List<Art> getByEstatus(@PathVariable String estatus) {
         return artRepository.findByEstatus(estatus);
     }
+
+    //11. Filtrar por artista
+    // En ArtController.java
+    @GetMapping("/artist/{artistaId}")
+    public ResponseEntity<List<Art>> getByArtist(@PathVariable Long artistaId) {
+        return ResponseEntity.ok(artService.buscarPorArtista(artistaId));
+    }
 }
 
