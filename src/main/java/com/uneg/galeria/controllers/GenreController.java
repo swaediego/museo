@@ -1,7 +1,6 @@
 package com.uneg.galeria.controllers;
 
 import com.uneg.galeria.models.Genre;
-import com.uneg.galeria.services.GenreService;
 import com.uneg.galeria.repositories.GenreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
