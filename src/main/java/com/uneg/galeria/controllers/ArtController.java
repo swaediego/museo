@@ -51,6 +51,7 @@ public  class ArtController {
         return ResponseEntity.ok(artService.guardarObra(art));
     }
 
+    //6. Reservar una Obra
     @PatchMapping("/{id}/reservar")
     public ResponseEntity<?> reservarObra(@PathVariable Long id) {
         Optional<Art> artOpt = artService.obtenerPorId(id);
@@ -64,6 +65,33 @@ public  class ArtController {
         art.setEstatus("Reservada");
         artService.guardarObra(art); // Esto es seguro porque 'art' ya tiene todos los datos de la BD
         return ResponseEntity.ok(art);
+    }
+
+    //8. Modificar una obra existente
+    @PutMapping("/{id}")
+    public ResponseEntity<Art> update(@PathVariable Long id, @RequestBody Art artDetails) {
+        return artService.obtenerPorId(id)
+                .map(art -> {
+                    art.setNombre(artDetails.getNombre());
+                    art.setPrecioBase(artDetails.getPrecioBase());
+                    art.setImagenUrl(artDetails.getImagenUrl());
+                    art.setEstatus(artDetails.getEstatus());
+                    art.setArtista(artDetails.getArtista());
+                    art.setGenero(artDetails.getGenero());
+
+                    return ResponseEntity.ok(artService.guardarObra(art));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    //9. Borrar una obra
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (artService.obtenerPorId(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        artService.eliminarObra(id);
+        return ResponseEntity.noContent().build();
     }
 }
 
