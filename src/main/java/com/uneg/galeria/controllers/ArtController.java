@@ -2,6 +2,7 @@ package com.uneg.galeria.controllers;
 
 import com.uneg.galeria.models.Art;
 import com.uneg.galeria.services.ArtService;
+import com.uneg.galeria.repositories.ArtRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,9 @@ public  class ArtController {
 
     @Autowired
     private ArtService artService;
+
+    @Autowired
+    private ArtRepository artRepository;
 
     // 1. Obtener todas las obras disponibles (Galería principal)
     @GetMapping
@@ -92,6 +96,12 @@ public  class ArtController {
         }
         artService.eliminarObra(id);
         return ResponseEntity.noContent().build();
+    }
+
+    //10. Filtrar por estatus
+    @GetMapping("/status/{estatus}")
+    public List<Art> getByEstatus(@PathVariable String estatus) {
+        return artRepository.findByEstatus(estatus);
     }
 }
 
