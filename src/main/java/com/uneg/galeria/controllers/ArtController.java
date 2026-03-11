@@ -1,6 +1,8 @@
 package com.uneg.galeria.controllers;
 
 import com.uneg.galeria.models.Art;
+import com.uneg.galeria.models.Buyer;
+import com.uneg.galeria.repositories.BuyerRepository;
 import com.uneg.galeria.services.ArtService;
 import com.uneg.galeria.repositories.ArtRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,9 @@ public  class ArtController {
 
     @Autowired
     private ArtRepository artRepository;
+
+    @Autowired
+    private BuyerRepository buyerRepository;
 
     // 1. Obtener todas las obras disponibles (Galería principal)
     @GetMapping
@@ -56,9 +61,11 @@ public  class ArtController {
     }
 
     //6. Reservar una Obra
-    @PatchMapping("/{id}/reservar")
-    public ResponseEntity<?> reservarObra(@PathVariable Long id) {
+    @PatchMapping("/{id}/reservar/{compradorId}")
+    public ResponseEntity<?> reservarObra(@PathVariable Long id, @PathVariable Long compradorId) {
         Optional<Art> artOpt = artService.obtenerPorId(id);
+        Optional<Buyer> buyerOpt = buyerRepository.findById(compradorId);
+
         if (artOpt.isEmpty()) return ResponseEntity.notFound().build();
 
         Art art = artOpt.get();
@@ -67,7 +74,8 @@ public  class ArtController {
         }
 
         art.setEstatus("Reservada");
-        artService.guardarObra(art); // Esto es seguro porque 'art' ya tiene todos los datos de la BD
+        art.setCompradorReserva(buyerOpt.get());
+        artService.guardarObra(art);
         return ResponseEntity.ok(art);
     }
 

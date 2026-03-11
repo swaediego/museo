@@ -41,7 +41,7 @@ public class Art {
     @JoinColumn(name = "id_genero", nullable = false)
     private Genre genero;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_comprador_reserva")
     private Buyer compradorReserva;
 }

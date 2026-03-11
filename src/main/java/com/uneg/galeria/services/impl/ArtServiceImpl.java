@@ -65,6 +65,7 @@ public class ArtServiceImpl implements ArtService {
     }
 
     @Override
+    @Transactional
     public void reservarObra(Long obraId, Long compradorId) {
         Art obra = artRepository.findById(obraId).orElseThrow(() -> new RuntimeException("Obra no encontrada"));
         Buyer comprador = buyerRepository.findById(compradorId).orElseThrow(() -> new RuntimeException("Comprador no encontrado"));
