@@ -19,4 +19,7 @@ public interface ArtService {
     // CRUD para el Administrador
     Art guardarObra(Art obra);
     void eliminarObra(Long id);
+
+
+    void reservarObra(Long obraId, Long compradorId);
 }

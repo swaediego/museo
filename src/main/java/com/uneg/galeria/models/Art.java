@@ -40,4 +40,8 @@ public class Art {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_genero", nullable = false)
     private Genre genero;
+
+    @ManyToOne
+    @JoinColumn(name = "id_comprador_reserva")
+    private Buyer compradorReserva;
 }

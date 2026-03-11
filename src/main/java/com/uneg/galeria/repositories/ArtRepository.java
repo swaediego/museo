@@ -21,4 +21,6 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
 
     // 4. Búsqueda combinada: Por género y que estén disponibles [cite: 12, 21]
     List<Art> findByGeneroNombreIgnoreCaseAndEstatus(String nombreGenero, String estatus);
+
+    List<Art> findByEstatus(String estatus);
 }

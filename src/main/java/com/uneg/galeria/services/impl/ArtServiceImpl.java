@@ -1,7 +1,9 @@
 package com.uneg.galeria.services.impl;
 
 import com.uneg.galeria.models.Art;
+import com.uneg.galeria.models.Buyer;
 import com.uneg.galeria.repositories.ArtRepository;
+import com.uneg.galeria.repositories.BuyerRepository;
 import com.uneg.galeria.services.ArtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,9 @@ public class ArtServiceImpl implements ArtService {
 
     @Autowired
     private ArtRepository artRepository;
+
+    @Autowired
+    private BuyerRepository buyerRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -57,5 +62,15 @@ public class ArtServiceImpl implements ArtService {
     @Transactional
     public void eliminarObra(Long id) {
         artRepository.deleteById(id);
+    }
+
+    @Override
+    public void reservarObra(Long obraId, Long compradorId) {
+        Art obra = artRepository.findById(obraId).orElseThrow(() -> new RuntimeException("Obra no encontrada"));
+        Buyer comprador = buyerRepository.findById(compradorId).orElseThrow(() -> new RuntimeException("Comprador no encontrado"));
+
+        obra.setEstatus("Reservada");
+        obra.setCompradorReserva(comprador);
+        artRepository.save(obra);
     }
 }
