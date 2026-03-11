@@ -15,4 +15,17 @@ public class GenreService {
     public List<Genre> getAllGenres() {
         return genreRepository.findAll();
     }
+
+    public Genre getGenreById(Long id) {
+        return genreRepository.findById(id).orElse(null);
+    }
+
+    public Genre saveGenre(Genre genre) {
+        return genreRepository.save(genre);
+    }
+
+
+    public void deleteGenre(Long id) {
+        genreRepository.deleteById(id);
+    }
 }

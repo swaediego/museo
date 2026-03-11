@@ -14,7 +14,6 @@ public class Invoice {
     private Long id;
 
     // Cada factura debe incluir solo una obra
-    // Usamos OneToOne porque una obra vendida no puede estar en otra factura
     @OneToOne
     @JoinColumn(name = "id_obra", nullable = false, unique = true)
     private Art obra;

@@ -20,14 +20,19 @@ public class InvoiceController {
 
     // Procesar una venta (El Admin ingresa los IDs y el código del cliente)
     @PostMapping("/sell")
-    public ResponseEntity<Invoice> createInvoice(@RequestBody Map<String, Object> request) {
-        Long obraId = Long.valueOf(request.get("obraId").toString());
-        Long compradorId = Long.valueOf(request.get("compradorId").toString());
-        Long adminId = Long.valueOf(request.get("adminId").toString());
-        String codigo = (String) request.get("codigoSeguridad");
-        String direccion = (String) request.get("direccion");
+    public ResponseEntity<?> createInvoice(@RequestBody Map<String, Object> request) {
+        try {
+            Long obraId = Long.valueOf(request.get("obraId").toString());
+            Long compradorId = Long.valueOf(request.get("compradorId").toString());
+            Long adminId = Long.valueOf(request.get("adminId").toString());
+            String codigo = (String) request.get("codigoSeguridad");
+            String direccion = (String) request.get("direccion");
 
-        return ResponseEntity.ok(invoiceService.crearFactura(obraId, compradorId, adminId, codigo, direccion));
+            return ResponseEntity.ok(invoiceService.crearFactura(obraId, compradorId, adminId, codigo, direccion));
+        } catch (RuntimeException e) {
+            // Esto permite que el frontend lea el mensaje de error real
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // Reporte de todas las ventas

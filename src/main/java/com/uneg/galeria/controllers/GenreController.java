@@ -2,7 +2,9 @@ package com.uneg.galeria.controllers;
 
 import com.uneg.galeria.models.Genre;
 import com.uneg.galeria.repositories.GenreRepository;
+import com.uneg.galeria.services.GenreService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -12,6 +14,7 @@ import java.util.List;
 public class GenreController {
 
     @Autowired private GenreRepository genreRepository;
+    @Autowired private GenreService genreService;
 
     @GetMapping
     public List<Genre> getAll() { return genreRepository.findAll(); }
@@ -26,5 +29,12 @@ public class GenreController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) { genreRepository.deleteById(id); }
+    public ResponseEntity<String> delete(@PathVariable Long id) {
+        try {
+            genreService.deleteGenre(id); // Asegúrate de tener este método en tu Service
+            return ResponseEntity.noContent().build();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.status(409).body("No se puede borrar el género porque existen obras asociadas a él.");
+        }
+    }
 }

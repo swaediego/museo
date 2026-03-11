@@ -31,8 +31,8 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .orElseThrow(() -> new RuntimeException("Admin no encontrado"));
 
         // 2. REGLA DE NEGOCIO: La obra debe estar disponible
-        if (!"Disponible".equalsIgnoreCase(obra.getEstatus())) {
-            throw new RuntimeException("La obra ya no está disponible para la venta.");
+        if (!"Reservada".equalsIgnoreCase(obra.getEstatus())) {
+            throw new RuntimeException("Solo se pueden facturar obras que hayan sido reservadas previamente.");
         }
 
         // 3. REGLA DE NEGOCIO: Validar código de seguridad y membresía
