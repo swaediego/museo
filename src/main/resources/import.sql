@@ -10,13 +10,12 @@ INSERT INTO security_question (pregunta) VALUES ('¿Ciudad de nacimiento de tu m
 INSERT INTO security_question (pregunta) VALUES ('¿Nombre de tu escuela primaria?');
 
 -- 2. ARTISTA Y OBRA
-INSERT INTO artist (nombre, biografia, nacionalidad, fecha_nacimiento, porcentaje_ganancia) VALUES ('Vincent van Gogh', 'Pintor postimpresionista.', 'Neerlandés', '1853-03-30', 8.50);
+INSERT INTO artist (nombre, biografia, nacionalidad, fecha_nacimiento, porcentaje_ganancia) VALUES ('Vincent van Gogh', 'Pintor postimpresionista.', 'Neerlandes', '1853-03-30', 8.50);
 INSERT INTO art (nombre, precio_base, fecha_creacion, estatus, imagen_url, id_artista, id_genero) VALUES ('La Noche Estrellada', 1500.00, 1889, 'Disponible', 'https://link-a-imagen.com/noche.jpg', 1, 1);
-INSERT INTO painting (id_obra, tecnica, estilo) VALUES (1, 'Óleo', 'Postimpresionismo');
+INSERT INTO painting (id_obra, tecnica, estilo) VALUES (1, 'oleo', 'Postimpresionismo');
 
 -- 3. USUARIOS
 INSERT INTO users (login, password, nombre, apellido, email, telefono, activo) VALUES ('rhixeidys01', 'password123', 'rhixeidys', 'Usuario', 'rhixeidys@test.com', '04141234567', TRUE);
-INSERT INTO users (login, password, nombre, apellido, email, telefono, activo) VALUES ('carlos_arte', 'password123', 'Carlos', 'Perez', 'carlos@test.com', '04149876543', TRUE);
 INSERT INTO users (login, password, nombre, apellido, email, telefono, activo) VALUES ('admin_ana', 'admin123', 'Ana', 'Admin', 'admin@galeria.com', '04141234567', TRUE);
 
 -- 4. COMPRADORES Y ADMINS

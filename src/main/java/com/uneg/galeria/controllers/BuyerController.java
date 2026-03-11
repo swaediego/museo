@@ -33,7 +33,7 @@ public class BuyerController {
     // 2. Procesar Pago de Membresía ($10.00)
     // Recibimos un mapa con el metodoPago para mayor flexibilidad
     // Cambia el tipo de retorno de ResponseEntity<String> a ResponseEntity<Buyer>
-    @PostMapping("/{id}/pay-membership")
+    @PostMapping("/{id}/pay-membership-v2")
     public ResponseEntity<Buyer> payMembership(@PathVariable Long id, @RequestBody Map<String, String> request) {
         String metodoPago = request.get("metodoPago");
         boolean exito = buyerService.procesarPagoMembresia(id, metodoPago);
