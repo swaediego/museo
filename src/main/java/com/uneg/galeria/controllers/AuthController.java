@@ -25,10 +25,17 @@ public class AuthController {
         return userRepository.findByLogin(request.getLogin())
                 .filter(user -> user.getPassword().equals(request.getPassword()))
                 .map(user -> {
+                    System.out.println("DEBUG: Clase del objeto encontrado: " + user.getClass().getName());
+                    System.out.println("DEBUG: ¿Es instancia de Admin?: " + (user instanceof Admin));
                     Map<String, Object> response = new HashMap<>();
                     response.put("user", user);
-                    // Aquí usamos tu lógica de identificar el cargo
-                    response.put("tipo", (user instanceof Admin) ? "ADMIN" : "BUYER");
+
+                    // Si el ID del usuario existe en la tabla Admin, es Admin.
+                    if (user instanceof Admin) {
+                        response.put("tipo", "ADMIN");
+                    } else {
+                        response.put("tipo", "BUYER");
+                    }
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
