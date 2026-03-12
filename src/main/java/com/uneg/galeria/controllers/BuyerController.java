@@ -32,19 +32,24 @@ public class BuyerController {
 
     // 2. Procesar Pago de Membresía ($10.00)
     // Recibimos un mapa con el metodoPago para mayor flexibilidad
-    // Cambia el tipo de retorno de ResponseEntity<String> a ResponseEntity<Buyer>
     @PostMapping("/{id}/pay-membership-v2")
-    public ResponseEntity<Buyer> payMembership(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> payMembership(@PathVariable Long id, @RequestBody Map<String, String> request) {
         String metodoPago = request.get("metodoPago");
+
+        // Validamos que el método de pago no sea nulo o esté vacío
+        if (metodoPago == null || metodoPago.isBlank()) {
+            return ResponseEntity.badRequest().body("El campo 'metodoPago' es requerido.");
+        }
+
         boolean exito = buyerService.procesarPagoMembresia(id, metodoPago);
 
         if (exito) {
             // Recuperamos al comprador actualizado desde el servicio
             return buyerService.obtenerPorId(id)
                     .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                    .orElse(ResponseEntity.notFound().build()); // Si no se encuentra el comprador después del pago
         } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("El pago no pudo ser procesado.");
         }
     }
 
