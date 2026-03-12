@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class InvoiceServiceImpl implements InvoiceService {
@@ -79,13 +81,31 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     public Double calcularTotalRecaudado(LocalDateTime inicio, LocalDateTime fin) {
-        return listarVentasPorPeriodo(inicio, fin).stream()
+        Double total = listarVentasPorPeriodo(inicio, fin).stream()
                 .mapToDouble(Invoice::getTotal)
                 .sum();
+        return total != null ? total : 0.0;
     }
 
     @Override
     public List<Invoice> obtenerTodas() {
         return invoiceRepository.findAll();
+    }
+
+    @Override
+    public Map<String, Object> obtenerHistorialUsuario(Long compradorId) {
+        // Validar que el comprador exista
+        if (!buyerRepository.existsById(compradorId)) {
+            throw new RuntimeException("Comprador no encontrado");
+        }
+
+        List<Art> reservadas = artRepository.findByCompradorReservaIdAndEstatus(compradorId, "Reservada");
+        List<Invoice> facturas = invoiceRepository.findByCompradorId(compradorId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("reservas", reservadas);
+        response.put("facturas", facturas);
+
+        return response;
     }
 }

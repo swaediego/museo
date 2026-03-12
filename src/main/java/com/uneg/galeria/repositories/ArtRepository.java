@@ -23,4 +23,10 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
     List<Art> findByGeneroNombreIgnoreCaseAndEstatus(String nombreGenero, String estatus);
 
     List<Art> findByEstatus(String estatus);
+
+    // 5. Buscar obras reservadas por un comprador específico
+    List<Art> findByCompradorReservaId(Long compradorReservaId);
+
+    // 6. Buscar obras reservadas por un comprador específico y estatus
+    List<Art> findByCompradorReservaIdAndEstatus(Long compradorReservaId, String estatus);
 }

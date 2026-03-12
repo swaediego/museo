@@ -40,4 +40,14 @@ public class InvoiceController {
     public ResponseEntity<List<Invoice>> getAllInvoices() {
         return ResponseEntity.ok(invoiceService.obtenerTodas());
     }
+
+    // Historial del usuario: Obras reservadas y Facturas asociadas
+    @GetMapping("/user/{compradorId}")
+    public ResponseEntity<Map<String, Object>> getUserHistory(@PathVariable Long compradorId) {
+        try {
+            return ResponseEntity.ok(invoiceService.obtenerHistorialUsuario(compradorId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
