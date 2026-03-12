@@ -61,22 +61,25 @@ public  class ArtController {
     }
 
     //6. Reservar una Obra
-    @PatchMapping("/{id}/reservar/{compradorId}")
+    @PostMapping("/{id}/reservar/{compradorId}")
     public ResponseEntity<?> reservarObra(@PathVariable Long id, @PathVariable Long compradorId) {
-        Optional<Art> artOpt = artService.obtenerPorId(id);
-        Optional<Buyer> buyerOpt = buyerRepository.findById(compradorId);
-
-        if (artOpt.isEmpty()) return ResponseEntity.notFound().build();
-
-        Art art = artOpt.get();
-        if (!"Disponible".equalsIgnoreCase(art.getEstatus())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Obra no disponible");
+        try {
+            artService.reservarObra(id, compradorId);
+            return ResponseEntity.ok().body("Obra reservada correctamente.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
 
-        art.setEstatus("Reservada");
-        art.setCompradorReserva(buyerOpt.get());
-        artService.guardarObra(art);
-        return ResponseEntity.ok(art);
+    // Endpoint para cancelar la reserva de una obra
+    @PostMapping("/{id}/cancelar-reserva")
+    public ResponseEntity<?> cancelarReserva(@PathVariable Long id) {
+        try {
+            Art art = artService.cancelarReserva(id);
+            return ResponseEntity.ok(art);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     //8. Modificar una obra existente
@@ -119,4 +122,3 @@ public  class ArtController {
         return ResponseEntity.ok(artService.buscarPorArtista(artistaId));
     }
 }
-

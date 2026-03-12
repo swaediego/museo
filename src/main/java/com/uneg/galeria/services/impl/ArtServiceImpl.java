@@ -70,8 +70,28 @@ public class ArtServiceImpl implements ArtService {
         Art obra = artRepository.findById(obraId).orElseThrow(() -> new RuntimeException("Obra no encontrada"));
         Buyer comprador = buyerRepository.findById(compradorId).orElseThrow(() -> new RuntimeException("Comprador no encontrado"));
 
+        if (!"Disponible".equalsIgnoreCase(obra.getEstatus())) {
+            throw new RuntimeException("La obra no está disponible para reservar.");
+        }
+
         obra.setEstatus("Reservada");
         obra.setCompradorReserva(comprador);
         artRepository.save(obra);
+    }
+
+    @Override
+    @Transactional
+    public Art cancelarReserva(Long artId) {
+        Art obra = artRepository.findById(artId)
+                .orElseThrow(() -> new RuntimeException("Obra no encontrada con ID: " + artId));
+
+        if (!"Reservada".equalsIgnoreCase(obra.getEstatus())) {
+            throw new RuntimeException("La obra no está reservada, por lo que no se puede cancelar la reserva.");
+        }
+
+        obra.setEstatus("Disponible");
+        obra.setCompradorReserva(null); // Elimina la referencia al comprador
+
+        return artRepository.save(obra);
     }
 }

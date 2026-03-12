@@ -22,4 +22,6 @@ public interface ArtService {
 
 
     void reservarObra(Long obraId, Long compradorId);
+
+    Art cancelarReserva(Long artId);
 }
