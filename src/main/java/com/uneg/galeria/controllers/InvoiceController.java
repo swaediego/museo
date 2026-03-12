@@ -50,4 +50,12 @@ public class InvoiceController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    // Detalle de una factura específica
+    @GetMapping("/{id}")
+    public ResponseEntity<Invoice> getInvoiceById(@PathVariable Long id) {
+        return invoiceService.obtenerFacturaPorId(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

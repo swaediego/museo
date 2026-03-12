@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
 @Service
 public class InvoiceServiceImpl implements InvoiceService {
@@ -107,5 +108,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         response.put("facturas", facturas);
 
         return response;
+    }
+
+    @Override
+    public Optional<Invoice> obtenerFacturaPorId(Long id) {
+        return invoiceRepository.findById(id);
     }
 }
