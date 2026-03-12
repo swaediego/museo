@@ -20,8 +20,7 @@ INSERT INTO users (login, password, nombre, apellido, email, telefono, activo) V
 
 -- 4. COMPRADORES Y ADMINS
 INSERT INTO buyer (id_usuario, datos_tarjeta_mask, membresia_paga, direccion_envio, codigo_seguridad) VALUES (1, '4540-XXXX-XXXX-1234', FALSE, 'Ciudad Guayana, Bolivar', 'SIN_PAGAR');
-INSERT INTO buyer (id_usuario, datos_tarjeta_mask, membresia_paga, direccion_envio, codigo_seguridad) VALUES (2, '5500-XXXX-XXXX-9999', FALSE, 'Puerto Ordaz, Bolivar', 'SIN_PAGAR');
-INSERT INTO admin (id_usuario, cargo) VALUES (3, 'Gerente de Ventas');
+INSERT INTO admin (id_usuario, cargo) VALUES (2, 'Gerente de Ventas');
 
 -- 5. RESPUESTAS
 INSERT INTO user_answers (user_id, question_id, respuesta) VALUES (1, 1, 'Bobby');
