@@ -8,6 +8,9 @@ public interface ArtService {
     // Listar todas las obras para la galería principal
     List<Art> obtenerTodasDisponibles();
 
+    // Listar TODAS las obras sin filtro (admin)
+    List<Art> obtenerTodas();
+
     // Filtros
     List<Art> buscarPorGenero(String nombreGenero);
     List<Art> buscarPorArtista(Long artistaId);
@@ -18,6 +21,7 @@ public interface ArtService {
 
     // CRUD para el Administrador
     Art guardarObra(Art obra);
+    boolean esReservada(Long id);
     void eliminarObra(Long id);
 
 

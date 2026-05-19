@@ -36,8 +36,10 @@ out/
 ### VS Code ###
 .vscode/
 
+# Sprint 1 - scripts y resúmenes (no subir a github)
+reporte_sprint1.md
+SPRINT1_MONGODB_CATALOGO.md
+scripts/
+
 # Docker
 .docker/
-# Ignorar los datos reales de la base de datos (se guardan en el volumen local)
-postgres_data/
-galeria_db_data/

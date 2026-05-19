@@ -21,12 +21,13 @@ public class Artist {
     @Column(columnDefinition = "TEXT")
     private String biografia;
 
+    @Column(length = 100)
     private String nacionalidad;
 
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
-    @Column(name = "foto_url")
+    @Column(name = "foto_url", columnDefinition = "TEXT")
     private String fotoUrl;
 
     @Column(name = "porcentaje_ganancia")

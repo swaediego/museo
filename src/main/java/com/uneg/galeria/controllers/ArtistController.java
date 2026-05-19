@@ -38,7 +38,8 @@ public class ArtistController {
     @PutMapping("/{id}")
     public ResponseEntity<Artist> update(@PathVariable Long id, @RequestBody Artist artist) {
         Artist existing = artistService.getArtistById(id);
-        if (existing == null) return ResponseEntity.notFound().build();
+        if (existing == null)
+            return ResponseEntity.notFound().build();
 
         artist.setId(id); // Aseguramos que el ID sea el correcto
         return ResponseEntity.ok(artistService.saveArtist(artist));

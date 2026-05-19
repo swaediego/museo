@@ -12,13 +12,23 @@ services:
     volumes:
       - galeria_db_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
-    # prueba para corroborar que la bd esta lista para recibir solicitudes
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U Miguel -d museo_db"]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb-galeria
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: galeria_catalog
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
 
   backend:
     build: .
@@ -28,11 +38,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mongodb:
+        condition: service_started
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/museo_db
       - SPRING_DATASOURCE_USERNAME=Miguel
       - SPRING_DATASOURCE_PASSWORD=password
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=create
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/galeria_catalog
 
 volumes:
   galeria_db_data:
+  mongodb_data:

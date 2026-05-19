@@ -2,6 +2,7 @@ package com.uneg.galeria.controllers;
 
 import com.uneg.galeria.models.Art;
 import com.uneg.galeria.models.Buyer;
+import com.uneg.galeria.models.Sculpture;
 import com.uneg.galeria.repositories.BuyerRepository;
 import com.uneg.galeria.services.ArtService;
 import com.uneg.galeria.repositories.ArtRepository;
@@ -32,6 +33,12 @@ public  class ArtController {
     public ResponseEntity<List<Art>> getAllAvailable() {
         List<Art> arts = artService.obtenerTodasDisponibles();
         return ResponseEntity.ok(arts);
+    }
+
+    // 1b. Obtener TODAS las obras sin filtro (para admin)
+    @GetMapping("/all")
+    public ResponseEntity<List<Art>> getAll() {
+        return ResponseEntity.ok(artService.obtenerTodas());
     }
 
     // 2. Obtener una obra por ID (Para la página de detalles/indagar)
@@ -87,12 +94,22 @@ public  class ArtController {
     public ResponseEntity<Art> update(@PathVariable Long id, @RequestBody Art artDetails) {
         return artService.obtenerPorId(id)
                 .map(art -> {
-                    art.setNombre(artDetails.getNombre());
-                    art.setPrecioBase(artDetails.getPrecioBase());
-                    art.setImagenUrl(artDetails.getImagenUrl());
-                    art.setEstatus(artDetails.getEstatus());
-                    art.setArtista(artDetails.getArtista());
-                    art.setGenero(artDetails.getGenero());
+                    if (artDetails.getNombre() != null && !artDetails.getNombre().isBlank()) art.setNombre(artDetails.getNombre());
+                    if (artDetails.getPrecioBase() != null) art.setPrecioBase(artDetails.getPrecioBase());
+                    if (artDetails.getImagenUrl() != null && !artDetails.getImagenUrl().isBlank()) art.setImagenUrl(artDetails.getImagenUrl());
+                    if (artDetails.getEstatus() != null && !artDetails.getEstatus().isBlank()) art.setEstatus(artDetails.getEstatus());
+                    if (artDetails.getArtista() != null && artDetails.getArtista().getId() != null) art.setArtista(artDetails.getArtista());
+                    if (artDetails.getGenero() != null && artDetails.getGenero().getId() != null) art.setGenero(artDetails.getGenero());
+
+                    if (artDetails instanceof Sculpture && art instanceof Sculpture) {
+                        Sculpture sculpture = (Sculpture) art;
+                        Sculpture sculptureDetails = (Sculpture) artDetails;
+                        if (sculptureDetails.getMaterial() != null) sculpture.setMaterial(sculptureDetails.getMaterial());
+                        if (sculptureDetails.getPeso() != null) sculpture.setPeso(sculptureDetails.getPeso());
+                        if (sculptureDetails.getLargo() != null) sculpture.setLargo(sculptureDetails.getLargo());
+                        if (sculptureDetails.getAncho() != null) sculpture.setAncho(sculptureDetails.getAncho());
+                        if (sculptureDetails.getProfundidad() != null) sculpture.setProfundidad(sculptureDetails.getProfundidad());
+                    }
 
                     return ResponseEntity.ok(artService.guardarObra(art));
                 })
@@ -101,9 +118,13 @@ public  class ArtController {
 
     //9. Borrar una obra
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable Long id) {
         if (artService.obtenerPorId(id).isEmpty()) {
             return ResponseEntity.notFound().build();
+        }
+        if (artService.esReservada(id)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("No se puede eliminar una obra reservada. Cancele la reserva primero.");
         }
         artService.eliminarObra(id);
         return ResponseEntity.noContent().build();
@@ -120,5 +141,11 @@ public  class ArtController {
     @GetMapping("/artist/{artistaId}")
     public ResponseEntity<List<Art>> getByArtist(@PathVariable Long artistaId) {
         return ResponseEntity.ok(artService.buscarPorArtista(artistaId));
+    }
+
+    //12. Verificar si una obra está reservada
+    @GetMapping("/{id}/reservada")
+    public ResponseEntity<?> esReservada(@PathVariable Long id) {
+        return ResponseEntity.ok(artService.esReservada(id));
     }
 }
