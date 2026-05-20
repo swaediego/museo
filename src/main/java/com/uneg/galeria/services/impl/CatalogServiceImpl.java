@@ -58,7 +58,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public List<ArtCatalogDocument> filterByPrecioGeneroEstatus(Double precioMin, Double precioMax, String genero, String estatus) {
+    public List<ArtCatalogDocument> filterByPrecioGeneroEstatus(Double precioMin, Double precioMax, String genero, String estatus, String sortBy) {
         List<AggregationOperation> operations = new ArrayList<>();
 
         if (precioMin != null && precioMax != null) {
@@ -75,9 +75,13 @@ public class CatalogServiceImpl implements CatalogService {
 
         if (estatus != null && !estatus.isEmpty()) {
             operations.add(match(Criteria.where("estatus").is(estatus)));
+        } else {
+            operations.add(match(Criteria.where("estatus").nin("Vendida", "Vendido")));
         }
 
-        operations.add(match(Criteria.where("estatus").ne("Vendida")));
+        if ("precioAsc".equalsIgnoreCase(sortBy)) {
+            operations.add(sort(org.springframework.data.domain.Sort.Direction.ASC, "precio"));
+        }
 
         Aggregation aggregation = newAggregation(operations);
         AggregationResults<ArtCatalogDocument> results = mongoTemplate.aggregate(

@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-
-
 @Entity
 @Table(name = "admin")
 @PrimaryKeyJoinColumn(name = "id_usuario")
@@ -13,6 +11,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Admin extends User {
 
-    @Column(nullable = false)
-    private String cargo;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_cargo", nullable = false)
+    private Cargo cargo;
+
+    @Column
+    private String rol;
 }

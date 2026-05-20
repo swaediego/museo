@@ -40,6 +40,9 @@ public class DataMigrationServiceImpl implements DataMigrationService {
     public void migrateArtById(Long id) {
         artRepository.findById(id).ifPresent(obra -> {
             ArtCatalogDocument doc = mapArtToDocument(obra);
+            catalogRepository.findByIdRelacional(id).ifPresent(existing -> {
+                doc.setId(existing.getId());
+            });
             catalogService.save(doc);
         });
     }

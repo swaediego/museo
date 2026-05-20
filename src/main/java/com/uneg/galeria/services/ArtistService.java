@@ -17,5 +17,9 @@ public class ArtistService {
 
     public Artist saveArtist(Artist artist) { return artistRepository.save(artist); }
 
-    public void deleteArtist(Long id) { artistRepository.deleteById(id); }
+    public void deleteArtist(Long id) {
+        if (artistRepository.existsById(id)) {
+            artistRepository.deleteById(id);
+        }
+    }
 }

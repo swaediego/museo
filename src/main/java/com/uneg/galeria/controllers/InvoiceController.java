@@ -58,4 +58,44 @@ public class InvoiceController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // Reporte 1: Obras vendidas en un periodo
+    @GetMapping("/report/sold")
+    public ResponseEntity<?> getSoldArtsByPeriod(
+            @RequestParam String inicio, 
+            @RequestParam String fin) {
+        try {
+            java.time.LocalDateTime start = java.time.LocalDateTime.parse(inicio);
+            java.time.LocalDateTime end = java.time.LocalDateTime.parse(fin);
+            List<Invoice> invoices = invoiceService.listarVentasPorPeriodo(start, end);
+            List<com.uneg.galeria.models.Art> obras = invoices.stream().map(Invoice::getObra).toList();
+            return ResponseEntity.ok(obras);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Reporte 2: Resumen de facturación dado un periodo
+    @GetMapping("/report/billing-summary")
+    public ResponseEntity<?> getBillingSummaryByPeriod(
+            @RequestParam String inicio, 
+            @RequestParam String fin) {
+        try {
+            java.time.LocalDateTime start = java.time.LocalDateTime.parse(inicio);
+            java.time.LocalDateTime end = java.time.LocalDateTime.parse(fin);
+            List<Invoice> invoices = invoiceService.listarVentasPorPeriodo(start, end);
+            
+            double totalRecaudado = invoices.stream().mapToDouble(Invoice::getTotal).sum();
+            double totalGananciaMuseo = invoices.stream().mapToDouble(Invoice::getMontoGanancia).sum();
+            
+            java.util.Map<String, Object> summary = new java.util.HashMap<>();
+            summary.put("facturas", invoices);
+            summary.put("totalRecaudado", totalRecaudado);
+            summary.put("totalGananciaMuseo", totalGananciaMuseo);
+            
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

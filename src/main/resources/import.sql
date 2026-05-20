@@ -4,6 +4,19 @@ INSERT INTO genre (nombre) VALUES ('Escultura');
 INSERT INTO genre (nombre) VALUES ('Fotografia');
 INSERT INTO genre (nombre) VALUES ('Orfebreria');
 INSERT INTO genre (nombre) VALUES ('Ceramica');
+
+-- CARGOS DEL MUSEO
+INSERT INTO cargo (nombre, descripcion) VALUES ('Director General', 'Máxima autoridad del museo');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Subdirector', 'Segundo al mando');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Curador Principal', 'Responsable de colecciones y exhibiciones');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Curador Asistente', 'Apoyo al curador principal');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Conservador', 'Preserva y mantiene las obras');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Coordinador de Exhibiciones', 'Organiza exposiciones temporales');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Gerente de Ventas', 'Gestiona ventas y membresías');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Coordinador de Educación', 'Programas educativos y visitas guiadas');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Administrador de Sistemas', 'Soporte técnico');
+INSERT INTO cargo (nombre, descripcion) VALUES ('Coordinador de Relaciones Públicas', 'Comunicación y medios');
+
 -- CATÁLOGOS BASE (Preguntas de seguridad)
 INSERT INTO security_question (pregunta) VALUES ('¿Nombre de tu primera mascota?');
 INSERT INTO security_question (pregunta) VALUES ('¿Ciudad de nacimiento de tu madre?');
@@ -20,7 +33,7 @@ INSERT INTO users (login, password, nombre, apellido, email, telefono, activo) V
 
 -- 4. COMPRADORES Y ADMINS
 INSERT INTO buyer (id_usuario, datos_tarjeta_mask, membresia_paga, direccion_envio, codigo_seguridad) VALUES (1, '4540-XXXX-XXXX-1234', FALSE, 'Ciudad Guayana, Bolivar', 'SIN_PAGAR');
-INSERT INTO admin (id_usuario, cargo) VALUES (2, 'Gerente de Ventas');
+INSERT INTO admin (id_usuario, id_cargo, rol) VALUES (2, 7, 'PRINCIPAL');
 
 -- 5. RESPUESTAS
 INSERT INTO user_answers (user_id, question_id, respuesta) VALUES (1, 1, 'Bobby');

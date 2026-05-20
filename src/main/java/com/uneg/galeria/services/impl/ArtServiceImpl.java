@@ -96,12 +96,20 @@ public class ArtServiceImpl implements ArtService {
 
     @Override
     @Transactional
-    public void reservarObra(Long obraId, Long compradorId) {
+    public void reservarObra(Long obraId, Long compradorId, String securityCode) {
         Art obra = artRepository.findById(obraId).orElseThrow(() -> new RuntimeException("Obra no encontrada"));
         Buyer comprador = buyerRepository.findById(compradorId).orElseThrow(() -> new RuntimeException("Comprador no encontrado"));
 
         if (!"Disponible".equalsIgnoreCase(obra.getEstatus())) {
             throw new RuntimeException("La obra no está disponible para reservar.");
+        }
+
+        if (comprador.getMembresiaPaga() == null || !comprador.getMembresiaPaga()) {
+            throw new RuntimeException("Debe pagar la membresía de $10.00 antes de reservar.");
+        }
+
+        if (comprador.getCodigoSeguridad() == null || !comprador.getCodigoSeguridad().equals(securityCode)) {
+            throw new RuntimeException("Código de seguridad incorrecto.");
         }
 
         obra.setEstatus("Reservada");
@@ -131,6 +139,10 @@ public class ArtServiceImpl implements ArtService {
     private void syncToMongo(Art obra) {
         ArtCatalogDocument doc = new ArtCatalogDocument();
         doc.setIdRelacional(obra.getId());
+
+        catalogService.findByIdRelacional(obra.getId()).ifPresent(existing -> {
+            doc.setId(existing.getId());
+        });
         doc.setNombre(obra.getNombre());
         doc.setPrecio(obra.getPrecioBase());
         doc.setEstatus(obra.getEstatus());

@@ -3,6 +3,10 @@ package com.uneg.galeria.controllers;
 import com.uneg.galeria.models.Art;
 import com.uneg.galeria.models.Buyer;
 import com.uneg.galeria.models.Sculpture;
+import com.uneg.galeria.models.Painting;
+import com.uneg.galeria.models.Photograph;
+import com.uneg.galeria.models.Ceramic;
+import com.uneg.galeria.models.Orphebrery;
 import com.uneg.galeria.repositories.BuyerRepository;
 import com.uneg.galeria.services.ArtService;
 import com.uneg.galeria.repositories.ArtRepository;
@@ -69,9 +73,12 @@ public  class ArtController {
 
     //6. Reservar una Obra
     @PostMapping("/{id}/reservar/{compradorId}")
-    public ResponseEntity<?> reservarObra(@PathVariable Long id, @PathVariable Long compradorId) {
+    public ResponseEntity<?> reservarObra(
+            @PathVariable Long id, 
+            @PathVariable Long compradorId, 
+            @RequestParam String securityCode) {
         try {
-            artService.reservarObra(id, compradorId);
+            artService.reservarObra(id, compradorId, securityCode);
             return ResponseEntity.ok().body("Obra reservada correctamente.");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -109,6 +116,28 @@ public  class ArtController {
                         if (sculptureDetails.getLargo() != null) sculpture.setLargo(sculptureDetails.getLargo());
                         if (sculptureDetails.getAncho() != null) sculpture.setAncho(sculptureDetails.getAncho());
                         if (sculptureDetails.getProfundidad() != null) sculpture.setProfundidad(sculptureDetails.getProfundidad());
+                    } else if (artDetails instanceof Painting && art instanceof Painting) {
+                        Painting painting = (Painting) art;
+                        Painting details = (Painting) artDetails;
+                        if (details.getTecnica() != null) painting.setTecnica(details.getTecnica());
+                        if (details.getEstilo() != null) painting.setEstilo(details.getEstilo());
+                    } else if (artDetails instanceof Photograph && art instanceof Photograph) {
+                        Photograph photo = (Photograph) art;
+                        Photograph details = (Photograph) artDetails;
+                        if (details.getTipoImpresion() != null) photo.setTipoImpresion(details.getTipoImpresion());
+                        if (details.getPapel() != null) photo.setPapel(details.getPapel());
+                        if (details.getEdicion() != null) photo.setEdicion(details.getEdicion());
+                    } else if (artDetails instanceof Ceramic && art instanceof Ceramic) {
+                        Ceramic ceramic = (Ceramic) art;
+                        Ceramic details = (Ceramic) artDetails;
+                        if (details.getTipoArcilla() != null) ceramic.setTipoArcilla(details.getTipoArcilla());
+                        if (details.getTemperaturaCoccion() != null) ceramic.setTemperaturaCoccion(details.getTemperaturaCoccion());
+                    } else if (artDetails instanceof Orphebrery && art instanceof Orphebrery) {
+                        Orphebrery orph = (Orphebrery) art;
+                        Orphebrery details = (Orphebrery) artDetails;
+                        if (details.getPurezaMetal() != null) orph.setPurezaMetal(details.getPurezaMetal());
+                        if (details.getPeso() != null) orph.setPeso(details.getPeso());
+                        if (details.getMetalBase() != null) orph.setMetalBase(details.getMetalBase());
                     }
 
                     return ResponseEntity.ok(artService.guardarObra(art));

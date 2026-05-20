@@ -1,6 +1,8 @@
 package com.uneg.galeria.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
@@ -10,6 +12,14 @@ import java.time.LocalDate;
 @Inheritance(strategy = InheritanceType.JOINED)
 @Data
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = Painting.class, name = "Painting"),
+    @JsonSubTypes.Type(value = Sculpture.class, name = "Sculpture"),
+    @JsonSubTypes.Type(value = Photograph.class, name = "Photograph"),
+    @JsonSubTypes.Type(value = Ceramic.class, name = "Ceramic"),
+    @JsonSubTypes.Type(value = Orphebrery.class, name = "Orphebrery")
+})
 public class Art {
 
     @Id

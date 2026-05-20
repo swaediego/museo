@@ -25,7 +25,7 @@ public interface ArtService {
     void eliminarObra(Long id);
 
 
-    void reservarObra(Long obraId, Long compradorId);
+    void reservarObra(Long obraId, Long compradorId, String securityCode);
 
     Art cancelarReserva(Long artId);
 }

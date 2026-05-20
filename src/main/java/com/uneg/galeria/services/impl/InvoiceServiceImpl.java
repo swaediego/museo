@@ -1,16 +1,19 @@
 package com.uneg.galeria.services.impl;
 
+import com.uneg.galeria.documents.ArtCatalogDocument;
 import com.uneg.galeria.models.*;
 import com.uneg.galeria.repositories.*;
+import com.uneg.galeria.services.ArtService;
+import com.uneg.galeria.services.CatalogService;
 import com.uneg.galeria.services.InvoiceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -20,6 +23,8 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Autowired private ArtRepository artRepository;
     @Autowired private BuyerRepository buyerRepository;
     @Autowired private AdminRepository adminRepository;
+    @Autowired private ArtService artService;
+    @Autowired private CatalogService catalogService;
 
     @Override
     @Transactional
@@ -69,8 +74,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         factura.setDireccionDestino(direccion);
 
         // 6. ACTUALIZAR ESTATUS DE LA OBRA
-        obra.setEstatus("Vendido");
-        artRepository.save(obra);
+        obra.setEstatus("Vendida");
+        Art obraGuardada = artRepository.save(obra);
+        artRepository.flush();
+        syncObraToMongo(obraGuardada);
 
         return invoiceRepository.save(factura);
     }
@@ -113,5 +120,59 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public Optional<Invoice> obtenerFacturaPorId(Long id) {
         return invoiceRepository.findById(id);
+    }
+
+    private void syncObraToMongo(Art obra) {
+        ArtCatalogDocument doc = new ArtCatalogDocument();
+        doc.setIdRelacional(obra.getId());
+
+        catalogService.findByIdRelacional(obra.getId()).ifPresent(existing -> {
+            doc.setId(existing.getId());
+        });
+        doc.setNombre(obra.getNombre());
+        doc.setPrecio(obra.getPrecioBase());
+        doc.setEstatus(obra.getEstatus());
+        doc.setImagenUrl(obra.getImagenUrl());
+        doc.setFechaCreacion(obra.getFechaCreacion());
+
+        if (obra.getArtista() != null) {
+            ArtCatalogDocument.EmbeddedArtist embeddedArtist = new ArtCatalogDocument.EmbeddedArtist();
+            embeddedArtist.setIdArtistaRelacional(obra.getArtista().getId());
+            embeddedArtist.setNombre(obra.getArtista().getNombre());
+            embeddedArtist.setNacionalidad(obra.getArtista().getNacionalidad());
+            embeddedArtist.setBiografia(obra.getArtista().getBiografia());
+            doc.setArtista(embeddedArtist);
+        }
+
+        if (obra.getGenero() != null) {
+            doc.setGenero(obra.getGenero().getNombre());
+        }
+
+        java.util.Map<String, Object> detalles = new HashMap<>();
+        if (obra instanceof Painting painting) {
+            detalles.put("tecnica", painting.getTecnica());
+            detalles.put("estilo", painting.getEstilo());
+        } else if (obra instanceof Sculpture sculpture) {
+            detalles.put("material", sculpture.getMaterial());
+            detalles.put("peso", sculpture.getPeso());
+            java.util.Map<String, Object> dimensiones = new HashMap<>();
+            dimensiones.put("largo", sculpture.getLargo());
+            dimensiones.put("ancho", sculpture.getAncho());
+            dimensiones.put("profundidad", sculpture.getProfundidad());
+            detalles.put("dimensiones", dimensiones);
+        } else if (obra instanceof Photograph photograph) {
+            detalles.put("tipoImpresion", photograph.getTipoImpresion());
+            detalles.put("papel", photograph.getPapel());
+            detalles.put("edicion", photograph.getEdicion());
+        } else if (obra instanceof Ceramic ceramic) {
+            detalles.put("tipoArcilla", ceramic.getTipoArcilla());
+            detalles.put("temperaturaCoccion", ceramic.getTemperaturaCoccion());
+        } else if (obra instanceof Orphebrery orphebrery) {
+            detalles.put("purezaMetal", orphebrery.getPurezaMetal());
+            detalles.put("peso", orphebrery.getPeso());
+            detalles.put("metalBase", orphebrery.getMetalBase());
+        }
+        doc.setDetallesEspecificos(detalles);
+        catalogService.save(doc);
     }
 }

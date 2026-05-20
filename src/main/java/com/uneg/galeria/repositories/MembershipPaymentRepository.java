@@ -9,4 +9,7 @@ import java.util.List;
 public interface MembershipPaymentRepository extends JpaRepository<MembershipPayment, Long> {
     // Para ver el historial de pagos de un cliente
     List<MembershipPayment> findByCompradorId(Long compradorId);
+
+    // Para reporte de membresías por período
+    List<MembershipPayment> findByFechaPagoBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

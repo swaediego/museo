@@ -12,7 +12,7 @@ public interface CatalogService {
     List<ArtCatalogDocument> findByGenero(String genero);
     List<ArtCatalogDocument> findByEstatus(String estatus);
     List<ArtCatalogDocument> findByPrecioRange(Double min, Double max);
-    List<ArtCatalogDocument> filterByPrecioGeneroEstatus(Double precioMin, Double precioMax, String genero, String estatus);
+    List<ArtCatalogDocument> filterByPrecioGeneroEstatus(Double precioMin, Double precioMax, String genero, String estatus, String sortBy);
     List<ArtCatalogDocument> aggregateByGeneroCount();
     List<ArtCatalogDocument> aggregateByArtistaNacionalidad();
     long countByGenero(String genero);

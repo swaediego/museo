@@ -22,6 +22,12 @@ CREATE TABLE security_question (
                                    pregunta VARCHAR(255) NOT NULL
 );
 
+CREATE TABLE cargo (
+                        id SERIAL PRIMARY KEY,
+                        nombre VARCHAR(100) UNIQUE NOT NULL,
+                        descripcion TEXT
+);
+
 CREATE TABLE genre (
                        id SERIAL PRIMARY KEY,
                        nombre VARCHAR(50) UNIQUE NOT NULL
@@ -61,8 +67,9 @@ CREATE TABLE buyer (
 );
 
 CREATE TABLE admin (
-                       id_usuario INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-                       cargo VARCHAR(50) NOT NULL
+                         id_usuario INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                         id_cargo INT NOT NULL REFERENCES cargo(id),
+                         rol VARCHAR(20) NOT NULL DEFAULT 'SECUNDARIO' CHECK (rol IN ('PRINCIPAL', 'SECUNDARIO'))
 );
 
 CREATE TABLE user_answers (

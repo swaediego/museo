@@ -19,6 +19,13 @@ public class GenreController {
     @GetMapping
     public List<Genre> getAll() { return genreRepository.findAll(); }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Genre> getById(@PathVariable Long id) {
+        return genreRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     public Genre create(@RequestBody Genre genre) { return genreRepository.save(genre); }
 

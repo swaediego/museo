@@ -50,9 +50,10 @@ public class CatalogController {
             @RequestParam(required = false) Double precioMin,
             @RequestParam(required = false) Double precioMax,
             @RequestParam(required = false) String genero,
-            @RequestParam(required = false) String estatus) {
+            @RequestParam(required = false) String estatus,
+            @RequestParam(required = false) String sortBy) {
         return ResponseEntity.ok(catalogService.filterByPrecioGeneroEstatus(
-                precioMin, precioMax, genero, estatus));
+                precioMin, precioMax, genero, estatus, sortBy));
     }
 
     @GetMapping("/stats/genero")
