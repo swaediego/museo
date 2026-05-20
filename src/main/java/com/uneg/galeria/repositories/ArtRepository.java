@@ -4,6 +4,7 @@ import com.uneg.galeria.models.Art;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 
 @Repository
@@ -29,4 +30,8 @@ public interface ArtRepository extends JpaRepository<Art, Long> {
 
     // 6. Buscar obras reservadas por un comprador específico y estatus
     List<Art> findByCompradorReservaIdAndEstatus(Long compradorReservaId, String estatus);
+
+    boolean existsByMetObjectId(Long metObjectId);
+
+    Optional<Art> findByMetObjectId(Long metObjectId);
 }

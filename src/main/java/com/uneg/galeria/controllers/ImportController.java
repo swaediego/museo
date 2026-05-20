@@ -35,11 +35,17 @@ public class ImportController {
             return ResponseEntity.badRequest()
                 .body(ImportArtResponse.error("objectId es requerido"));
         }
-        ImportArtResponse response = artImportService.importarObra(request);
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.internalServerError().body(response);
+        try {
+            ImportArtResponse response = artImportService.importarObra(request);
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.internalServerError().body(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(502).body(
+                ImportArtResponse.error("Error en la importacion: " + e.getMessage())
+            );
         }
     }
 }

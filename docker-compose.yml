@@ -30,6 +30,23 @@ services:
     volumes:
       - mongodb_data:/data/db
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-ai-service
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          memory: 4G
+    entrypoint: 
+      - /bin/sh
+      - -c
+      - "ollama serve & sleep 5 && ollama pull llama3 && wait"
+
   backend:
     build: .
     container_name: galeria-app-backend
@@ -50,3 +67,4 @@ services:
 volumes:
   galeria_db_data:
   mongodb_data:
+  ollama_data:
