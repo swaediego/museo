@@ -162,6 +162,8 @@ public class ArtServiceImpl implements ArtService {
             doc.setGenero(obra.getGenero().getNombre());
         }
 
+        doc.setMetObjectId(obra.getMetObjectId());
+
         Map<String, Object> detalles = new HashMap<>();
 
         if (obra instanceof Painting painting) {

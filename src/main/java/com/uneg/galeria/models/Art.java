@@ -54,4 +54,7 @@ public class Art {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_comprador_reserva")
     private Buyer compradorReserva;
+
+    @Column(name = "met_object_id", unique = true)
+    private Long metObjectId;
 }

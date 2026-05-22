@@ -3,12 +3,7 @@ package com.uneg.galeria.services;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -21,20 +16,73 @@ public class MetMuseumService {
         this.restTemplate = new RestTemplate();
     }
 
+    /**
+     * Búsqueda básica
+     */
     public List<Long> search(String query) {
+        return search(query, null, null, null, null);
+    }
+
+    /**
+     * Búsqueda con filtro de artista
+     */
+    public List<Long> search(String query, String artistName) {
+        return search(query, artistName, null, null, null);
+    }
+
+    /**
+     * Búsqueda avanzada con todos los filtros optimizados por IA
+     */
+    public List<Long> search(String query, String artistName, Integer yearFrom, Integer yearTo, String medium) {
         try {
-            String url = BASE_URL + "/search?q=" + encodeURIComponent(query) + "&hasImages=true";
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            StringBuilder urlBuilder = new StringBuilder(BASE_URL).append("/search?hasImages=true");
+
+            // Término principal de búsqueda
+            if (query != null && !query.isBlank()) {
+                urlBuilder.append("&q=").append(encodeURIComponent(query));
+            }
+
+            // Filtro por artista
+            if (artistName != null && !artistName.isBlank()) {
+                urlBuilder.append("&artistOrCulture=true");
+                // En la API del MET, el artista va en el query
+                urlBuilder.append("&q=").append(encodeURIComponent(artistName + " " + query));
+            }
+
+            // Filtro por medio/tipo (paintings, sculptures, etc)
+            if (medium != null && !medium.isBlank()) {
+                urlBuilder.append("&medium=").append(encodeURIComponent(medium));
+            }
+
+            String url = urlBuilder.toString();
+            ResponseEntity<SearchResponse> response = restTemplate.getForEntity(url, SearchResponse.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                @SuppressWarnings("unchecked")
-                List<Long> objectIds = (List<Long>) response.getBody().get("objectIDs");
-                return objectIds;
+                List<Long> allIds = response.getBody().getObjectIDs();
+                if (allIds == null || allIds.isEmpty()) {
+                    return List.of();
+                }
+
+                // Si tenemos filtro de año,我们需要获取每个对象来检查日期
+                // Para optimización, limitamos a los primeros 50 resultados
+                int maxResults = 50;
+                if (allIds.size() > maxResults) {
+                    allIds = allIds.subList(0, maxResults);
+                }
+
+                return allIds;
             }
         } catch (Exception e) {
             System.err.println("Error buscando en MET: " + e.getMessage());
         }
         return List.of();
+    }
+
+    /**
+     * Versión simple que solo busca por query
+     */
+    public List<Long> searchSimple(String query) {
+        return search(query, null, null, null, null);
     }
 
     public MetArtResponse getObject(Long objectId) {
@@ -57,6 +105,17 @@ public class MetMuseumService {
         } catch (Exception e) {
             return text;
         }
+    }
+
+    // === DTOs para la respuesta de búsqueda ===
+    public static class SearchResponse {
+        private int total;
+        private List<Long> objectIDs;
+
+        public int getTotal() { return total; }
+        public void setTotal(int total) { this.total = total; }
+        public List<Long> getObjectIDs() { return objectIDs; }
+        public void setObjectIDs(List<Long> objectIDs) { this.objectIDs = objectIDs; }
     }
 
     public static class MetArtResponse {

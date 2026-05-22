@@ -11,6 +11,8 @@ public class ImportArtResponse {
     private String nombre;
     private String tipo;
     private String imagenUrl;
+    private String clasificacionSugeridaIA;
+    private java.util.Map<String, Object> detallesExtraidos;
 
     public static ImportArtResponse success(Long obraId, Long idRelacional, String nombre, String tipo, String imagenUrl) {
         ImportArtResponse r = new ImportArtResponse();

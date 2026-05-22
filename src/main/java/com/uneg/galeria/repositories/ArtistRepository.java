@@ -11,4 +11,7 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
 
     // Buscar artista por nombre
     Optional<Artist> findByNombre(String nombre);
+
+    // Buscar artista por nombre (insensible a mayúsculas)
+    Optional<Artist> findByNombreIgnoreCase(String nombre);
 }

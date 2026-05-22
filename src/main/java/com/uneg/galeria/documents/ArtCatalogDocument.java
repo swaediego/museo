@@ -32,6 +32,8 @@ public class ArtCatalogDocument {
 
     private EmbeddedArtist artista;
 
+    private Long metObjectId;
+
     private Map<String, Object> detallesEspecificos;
 
     @Data

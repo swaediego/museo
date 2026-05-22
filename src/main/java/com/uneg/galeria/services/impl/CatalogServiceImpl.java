@@ -8,12 +8,14 @@ import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Service
 @RequiredArgsConstructor
@@ -58,29 +60,31 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     @Override
-    public List<ArtCatalogDocument> filterByPrecioGeneroEstatus(Double precioMin, Double precioMax, String genero, String estatus, String sortBy) {
+public List<ArtCatalogDocument> filterByPrecioGeneroEstatus(Double precioMin, Double precioMax, String genero, String estatus, String sortBy) {
         List<AggregationOperation> operations = new ArrayList<>();
 
         if (precioMin != null && precioMax != null) {
-            operations.add(match(Criteria.where("precio").gte(precioMin).lte(precioMax)));
+            operations.add(match(where("precio").gte(precioMin).lte(precioMax)));
         } else if (precioMin != null) {
-            operations.add(match(Criteria.where("precio").gte(precioMin)));
+            operations.add(match(where("precio").gte(precioMin)));
         } else if (precioMax != null) {
-            operations.add(match(Criteria.where("precio").lte(precioMax)));
+            operations.add(match(where("precio").lte(precioMax)));
         }
 
         if (genero != null && !genero.isEmpty()) {
-            operations.add(match(Criteria.where("genero").is(genero)));
+            operations.add(match(where("genero").is(genero)));
         }
 
         if (estatus != null && !estatus.isEmpty()) {
-            operations.add(match(Criteria.where("estatus").is(estatus)));
+            operations.add(match(where("estatus").is(estatus)));
         } else {
-            operations.add(match(Criteria.where("estatus").nin("Vendida", "Vendido")));
+            operations.add(match(where("estatus").nin("Vendida", "Vendido")));
         }
 
         if ("precioAsc".equalsIgnoreCase(sortBy)) {
-            operations.add(sort(org.springframework.data.domain.Sort.Direction.ASC, "precio"));
+            operations.add(Aggregation.sort(Sort.Direction.ASC, "precio"));
+        } else if ("precioDesc".equalsIgnoreCase(sortBy)) {
+            operations.add(Aggregation.sort(Sort.Direction.DESC, "precio"));
         }
 
         Aggregation aggregation = newAggregation(operations);
