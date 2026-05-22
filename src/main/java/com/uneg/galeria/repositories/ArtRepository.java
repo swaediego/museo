@@ -10,6 +10,11 @@ import java.util.Optional;
 @Repository
 public interface ArtRepository extends JpaRepository<Art, Long> {
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"artista", "genero", "artista.biografia"})
+    List<Art> findAll();
+
+    List<Art> findAllByIdIn(List<Long> ids);
+
     // 1. Buscar obras por género (usando el nombre del género)
     List<Art> findByGeneroNombreIgnoreCase(String nombreGenero);
 

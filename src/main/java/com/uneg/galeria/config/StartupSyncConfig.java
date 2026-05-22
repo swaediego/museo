@@ -13,11 +13,10 @@ public class StartupSyncConfig {
     public CommandLineRunner runStartupSync(DataMigrationService migrationService, CatalogService catalogService) {
         return args -> {
             if (catalogService.findAll().isEmpty()) {
-                System.out.println("====== [Startup] La base de datos de MongoDB está vacía. Iniciando sincronización de semillas (PostgreSQL -> MongoDB) ======");
+                System.out.println("====== [Startup] MongoDB vacío. Sincronizando... ======");
                 migrationService.migrateAllArtToMongo();
-                System.out.println("====== [Startup] Sincronización inicial completada con éxito. ======");
             } else {
-                System.out.println("====== [Startup] MongoDB ya contiene datos. Omitiendo sincronización inicial. ======");
+                System.out.println("====== [Startup] MongoDB ya tiene datos. ======");
             }
         };
     }
