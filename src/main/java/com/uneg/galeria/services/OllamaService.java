@@ -9,20 +9,34 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class OllamaService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private static final String OLLAMA_URL = "http://localhost:11434/api/generate";
+    private static String OLLAMA_URL_BASE = "http://localhost:11434";
     private static final String MODEL = "llama3";
 
-    private static final String SYSTEM_PROMPT = "Eres un experto en curaduria de arte y extraccion de datos tecnicos. Tu tarea es analizar la descripcion de una obra del MET y clasificarla en uno de los siguientes generos: Painting, Sculpture, Orphebrery, Photograph, Ceramic. Debes devolver estrictamente un objeto JSON con la siguiente estructura: { \"genre\": \"[Nombre del Genero]\", \"attributes\": { \"campo\": \"valor\" } } Los atributos deben corresponder exactamente a los campos definidos para cada genero.\n\nMapeo de atributos por genero:\n- Painting: tecnica, estilo, fechaCreacion\n- Sculpture: material, peso, largo, ancho, profundidad, fechaCreacion\n- Orphebrery: purezaMetal, metalBase, peso, fechaCreacion\n- Photograph: tipoImpresion, papel, edicion, fechaCreacion\n- Ceramic: tipoArcilla, temperaturaCoccion, fechaCreacion";
+    private static final String SYSTEM_PROMPT = "Eres un experto en curaduría de arte y extracción de datos técnicos. Tu tarea es analizar la descripción de una obra del MET y clasificarla en uno de los siguientes géneros: Painting, Sculpture, Orfebrery, Photograph, Ceramic. Debes devolver estrictamente un objeto JSON con la siguiente estructura: { \"genre\": \"[Nombre del Género]\", \"attributes\": { \"campo\": \"valor\" } } Los atributos deben corresponder exactamente a los campos definidos para cada género.\n\nMapeo de atributos por género:\n- Painting: tecnica, estilo, fechaCreacion\n- Sculpture: material, peso, largo, ancho, profundidad, fechaCreacion\n- Orfebrery: purezaMetal, metalBase, peso, fechaCreacion\n- Photograph: tipoImpresion, papel, edicion, fechaCreacion\n- Ceramic: tipoArcilla, temperaturaCoccion, fechaCreacion";
 
     public OllamaService() {
-        this.restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(15000);   // 15 segundos
+        factory.setReadTimeout(30000);    // 30 segundos para generación de LLMs
+        this.restTemplate = new RestTemplate(factory);
         this.objectMapper = new ObjectMapper();
+    }
+
+    @PostConstruct
+    public void init() {
+        String envUrl = System.getenv("OLLAMA_URL");
+        if (envUrl != null && !envUrl.isBlank()) {
+            // Extraer la base: http://host:port de http://host:port/api/generate
+            OLLAMA_URL_BASE = envUrl.replace("/api/generate", "").replace("/api/chat", "");
+        }
     }
 
     public OllamaArtResponse analizarObra(String titulo, String artista, String medium,
@@ -40,7 +54,8 @@ public class OllamaService {
             requestBody.put("stream", false);
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(OLLAMA_URL, entity, String.class);
+            String fullUrl = OLLAMA_URL_BASE + "/api/generate";
+            ResponseEntity<String> response = restTemplate.postForEntity(fullUrl, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return parseResponse(response.getBody());

@@ -51,7 +51,14 @@ public class CatalogController {
             @RequestParam(required = false) Double precioMax,
             @RequestParam(required = false) String genero,
             @RequestParam(required = false) String estatus,
-            @RequestParam(required = false) String sortBy) {
+            @RequestParam(required = false) String sortBy,
+            @RequestBody(required = false) Map<String, Object> body) {
+        
+        // Si sortBy viene en el body (JSON), tiene prioridad
+        if (body != null && body.containsKey("sortBy") && body.get("sortBy") != null) {
+            sortBy = body.get("sortBy").toString();
+        }
+        
         return ResponseEntity.ok(catalogService.filterByPrecioGeneroEstatus(
                 precioMin, precioMax, genero, estatus, sortBy));
     }

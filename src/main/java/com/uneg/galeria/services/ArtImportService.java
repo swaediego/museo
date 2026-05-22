@@ -1,8 +1,10 @@
 package com.uneg.galeria.services;
 
+import com.uneg.galeria.dto.BuscarObrasResponse;
 import com.uneg.galeria.dto.ImportArtRequest;
 import com.uneg.galeria.dto.ImportArtResponse;
 import com.uneg.galeria.dto.MetSearchResult;
+import com.uneg.galeria.dto.MultiSourceSearchResult;
 import com.uneg.galeria.models.*;
 import com.uneg.galeria.repositories.ArtRepository;
 import com.uneg.galeria.repositories.ArtistRepository;
@@ -28,6 +30,12 @@ public class ArtImportService {
     private MetMuseumService metMuseumService;
 
     @Autowired
+    private RijksmuseumService rijksmuseumService;
+
+    @Autowired
+    private HarvardArtMuseumsService harvardService;
+
+    @Autowired
     private ArtistRepository artistRepository;
 
     @Autowired
@@ -45,19 +53,32 @@ public class ArtImportService {
     @Autowired
     private ArtRepository artRepository;
 
+    @Autowired
+    private SearchAssistanceService searchAssistanceService;
+
     private static final String DEFAULT_IMAGE = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Question_book_alternate_icon.svg/1024px-Question_book_alternate_icon.svg.png";
 
     public List<MetSearchResult> buscarObras(String busquedaEspanol) {
-        String busquedaIngles = translationService.spanishToEnglish(busquedaEspanol);
-        List<Long> objectIds = metMuseumService.search(busquedaIngles);
+        return buscarObras(busquedaEspanol, null);
+    }
 
-        List<MetSearchResult> resultados = new ArrayList<>();
+    public List<MetSearchResult> buscarObras(String busquedaEspanol, String artista) {
+        return buscarObrasConSugerencias(busquedaEspanol, artista).getResultados();
+    }
+
+    public BuscarObrasResponse buscarObrasConSugerencias(String busquedaEspanol, String artista) {
+        String busquedaIngles = translationService.spanishToEnglish(busquedaEspanol);
+        java.util.Set<MetSearchResult> resultadosSet = new java.util.LinkedHashSet<>();
+
+        // 1. Buscar en MET
+        System.out.println("[ArtImportService] Buscando en MET: " + busquedaIngles);
+        List<Long> objectIds = metMuseumService.search(busquedaIngles, null, null, null, null);
         int limite = Math.min(objectIds.size(), 10);
 
         for (int i = 0; i < limite; i++) {
             MetMuseumService.MetArtResponse art = metMuseumService.getObject(objectIds.get(i));
             if (art != null && art.getPrimaryImage() != null && !art.getPrimaryImage().isBlank()) {
-                resultados.add(MetSearchResult.from(
+                resultadosSet.add(MetSearchResult.from(
                     art.getObjectID(),
                     art.getTitle(),
                     art.getArtistDisplayName(),
@@ -66,7 +87,138 @@ public class ArtImportService {
                 ));
             }
         }
-        return resultados;
+        System.out.println("[ArtImportService] MET: " + resultadosSet.size() + " resultados");
+
+        // 2. SIEMPRE buscar también en fuentes alternativas (no solo si MET falla)
+        System.out.println("[ArtImportService] Buscando en Rijksmuseum y Harvard...");
+        if (artista != null && !artista.isBlank()) {
+            buscarEnRijksmuseum(busquedaIngles, artista, resultadosSet, 5);
+            buscarEnHarvard(busquedaIngles, artista, resultadosSet, 5);
+        }
+        // Si no tenemos resultados aún, buscar sin artista
+        if (resultadosSet.isEmpty() || resultadosSet.size() < 3) {
+            buscarEnRijksmuseum(busquedaIngles, null, resultadosSet, 5);
+            buscarEnHarvard(busquedaIngles, null, resultadosSet, 5);
+        }
+        System.out.println("[ArtImportService] Total tras todas las fuentes: " + resultadosSet.size() + " resultados");
+
+        List<MetSearchResult> resultados = new ArrayList<>(resultadosSet);
+
+        // Si no hay resultados, buscar sugerencias
+        if (resultados.isEmpty()) {
+            System.out.println("[ArtImportService] No se encontró la obra, buscando sugerencias...");
+
+            if (artista != null && !artista.isBlank()) {
+                List<MetSearchResult> sugerencias = buscarSugerenciasPorArtista(artista);
+                if (!sugerencias.isEmpty()) {
+                    return BuscarObrasResponse.noEncontrado(busquedaEspanol, sugerencias);
+                }
+            }
+
+            List<MetSearchResult> sugerencias = buscarSugerenciasPorTitulo(busquedaIngles);
+            return BuscarObrasResponse.noEncontrado(busquedaEspanol, sugerencias);
+        }
+
+        return BuscarObrasResponse.exito(resultados);
+    }
+
+    private List<MetSearchResult> buscarSugerenciasPorArtista(String artista) {
+        java.util.Set<MetSearchResult> sugerencias = new java.util.LinkedHashSet<>();
+        
+        try {
+            // Buscar obras del mismo artista en MET
+            List<Long> objectIds = metMuseumService.search(artista, null, null, null, null);
+            int limite = Math.min(objectIds.size(), 5);
+            
+            for (int i = 0; i < limite; i++) {
+                MetMuseumService.MetArtResponse art = metMuseumService.getObject(objectIds.get(i));
+                if (art != null && art.getPrimaryImage() != null && !art.getPrimaryImage().isBlank()) {
+                    sugerencias.add(MetSearchResult.from(
+                        art.getObjectID(),
+                        art.getTitle(),
+                        art.getArtistDisplayName(),
+                        art.getPrimaryImage(),
+                        art.getClassification()
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[ArtImportService] Error al buscar sugerencias por artista: " + e.getMessage());
+        }
+        
+        return new ArrayList<>(sugerencias);
+    }
+
+    private List<MetSearchResult> buscarSugerenciasPorTitulo(String tituloParcial) {
+        java.util.Set<MetSearchResult> sugerencias = new java.util.LinkedHashSet<>();
+        
+        try {
+            // Buscar con palabras parciales del título
+            String[] palabras = tituloParcial.split("\\s+");
+            for (String palabra : palabras) {
+                if (palabra.length() > 3) {  // Ignorar palabras muy cortas
+                    List<Long> objectIds = metMuseumService.search(palabra, null, null, null, null);
+                    int limite = Math.min(objectIds.size(), 3);
+                    
+                    for (int i = 0; i < limite; i++) {
+                        MetMuseumService.MetArtResponse art = metMuseumService.getObject(objectIds.get(i));
+                        if (art != null && art.getPrimaryImage() != null && !art.getPrimaryImage().isBlank()) {
+                            sugerencias.add(MetSearchResult.from(
+                                art.getObjectID(),
+                                art.getTitle(),
+                                art.getArtistDisplayName(),
+                                art.getPrimaryImage(),
+                                art.getClassification()
+                            ));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[ArtImportService] Error al buscar sugerencias por título: " + e.getMessage());
+        }
+        
+        return new ArrayList<>(sugerencias);
+    }
+
+    private void buscarEnRijksmuseum(String query, String artistName, java.util.Set<MetSearchResult> resultados, int limite) {
+        try {
+            List<RijksmuseumService.RijksmuseumResult> rijksResults = 
+                rijksmuseumService.search(query, artistName);
+            
+            for (int i = 0; i < Math.min(rijksResults.size(), limite); i++) {
+                RijksmuseumService.RijksmuseumResult r = rijksResults.get(i);
+                resultados.add(MetSearchResult.fromRijksmuseum(
+                    r.getTitulo(),
+                    r.getArtista(),
+                    r.getImagenUrl(),
+                    r.getClasificacion(),
+                    r.getObjectNumber()
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("Error en búsqueda Rijksmuseum: " + e.getMessage());
+        }
+    }
+
+    private void buscarEnHarvard(String query, String artistName, java.util.Set<MetSearchResult> resultados, int limite) {
+        try {
+            List<HarvardArtMuseumsService.HarvardResult> harvardResults = 
+                harvardService.search(query, artistName);
+            
+            for (int i = 0; i < Math.min(harvardResults.size(), limite); i++) {
+                HarvardArtMuseumsService.HarvardResult h = harvardResults.get(i);
+                resultados.add(MetSearchResult.fromHarvard(
+                    h.getTitulo(),
+                    h.getArtista(),
+                    h.getImagenUrl(),
+                    h.getClasificacion(),
+                    h.getId()
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("Error en búsqueda Harvard: " + e.getMessage());
+        }
     }
 
     @Transactional
@@ -84,13 +236,15 @@ public class ArtImportService {
                 else if ("Ceramic".equals(existingType)) existingType = "Cerámica";
                 else if ("Orphebrery".equals(existingType)) existingType = "Orfebrería";
 
-                return ImportArtResponse.success(
+                ImportArtResponse resp = ImportArtResponse.success(
                     existente.getId(),
                     existente.getId(),
                     existente.getNombre(),
                     existingType,
                     existente.getImagenUrl()
                 );
+                resp.setMessage("Esta obra ya existe en el sistema");
+                return resp;
             }
 
             String tituloEspanol = request.getTituloEspanol();
@@ -101,14 +255,45 @@ public class ArtImportService {
             }
 
             String tituloFinal = (tituloEspanol != null && !tituloEspanol.isBlank())
-                ? tituloEspanol
-                : translationService.englishToSpanish(metArt.getTitle());
+                ? tituloEspanol.trim()
+                : translationService.englishToSpanish(metArt.getTitle()).trim();
 
             String artistaNombre = (metArt.getArtistDisplayName() != null && !metArt.getArtistDisplayName().isBlank())
+                ? metArt.getArtistDisplayName().toLowerCase().trim()
+                : "artista desconocido";
+
+            // Verificar duplicado por título + artista normalizado (case-insensitive)
+            Optional<Art> duplicado = artRepository.findAll().stream()
+                .filter(a -> a.getNombre().toLowerCase().trim().equals(tituloFinal)
+                          && a.getArtista().getNombre().toLowerCase().trim().equals(artistaNombre))
+                .findFirst();
+
+            if (duplicado.isPresent()) {
+                Art existente = duplicado.get();
+                String existingType = existente.getClass().getSimpleName();
+                if ("Painting".equals(existingType)) existingType = "Pintura";
+                else if ("Sculpture".equals(existingType)) existingType = "Escultura";
+                else if ("Photograph".equals(existingType)) existingType = "Fotografía";
+                else if ("Ceramic".equals(existingType)) existingType = "Cerámica";
+                else if ("Orphebrery".equals(existingType)) existingType = "Orfebrería";
+
+                ImportArtResponse resp = ImportArtResponse.success(
+                    existente.getId(),
+                    existente.getId(),
+                    existente.getNombre(),
+                    existingType,
+                    existente.getImagenUrl()
+                );
+                resp.setMessage("Esta obra ya existe en el sistema (duplicado detectado por título y artista)");
+                return resp;
+            }
+
+            // artistaNombre en formato correcto para guardar (primera mayúscula) pero normalizado
+            String artistaNombreRaw = (metArt.getArtistDisplayName() != null && !metArt.getArtistDisplayName().isBlank())
                 ? metArt.getArtistDisplayName()
                 : "Artista Desconocido";
 
-            Artist artista = crearOFindArtista(artistaNombre);
+            Artist artista = crearOFindArtista(artistaNombreRaw.toLowerCase().trim());
 
             String imagenUrl = (metArt.getPrimaryImage() != null && !metArt.getPrimaryImage().isBlank())
                 ? metArt.getPrimaryImage()
@@ -120,8 +305,11 @@ public class ArtImportService {
 
             int fechaCreacion = extraerAnio(metArt.getObjectDate());
 
-            // 1. Prioritize Ollama AI analysis
+            // 1. Intentar análisis con IA (Ollama) - opcional, no bloquea importación
             com.uneg.galeria.dto.OllamaArtResponse ollamaData = null;
+            String tipoArt = null;
+            String clasificacionSugeridaIA = null;
+            
             try {
                 ollamaData = ollamaService.analizarObra(
                     metArt.getTitle(),
@@ -131,20 +319,20 @@ public class ArtImportService {
                     metArt.getObjectDate(),
                     metArt.getClassification()
                 );
+                
+                if (ollamaData != null && ollamaData.getGenre() != null) {
+                    tipoArt = traducirGenero(ollamaData.getGenre());
+                    clasificacionSugeridaIA = tipoArt;
+                    System.out.println("[ArtImportService] Ollama clasificó: " + tipoArt);
+                }
             } catch (Exception e) {
-                throw new RuntimeException("Error en la conexión con el servicio de IA (Ollama): " + e.getMessage(), e);
+                System.err.println("[ArtImportService] Ollama no disponible, usando fallback MET: " + e.getMessage());
             }
 
-            if (ollamaData == null) {
-                throw new RuntimeException("El servicio de IA (Ollama) no devolvió una respuesta válida.");
-            }
-
-            String tipoArt = traducirGenero(ollamaData.getGenre());
-            String clasificacionSugeridaIA = tipoArt; // Store the original AI recommendation
-
-            // Fallback to MET classification if Ollama returned null or unrecognized genre
-            if (tipoArt == null) {
+            // Fallback: clasificar según el MET si Ollama falló o devolvió género desconocido
+            if (tipoArt == null || tipoArt.isBlank()) {
                 tipoArt = mapearClasificacion(metArt.getClassification());
+                System.out.println("[ArtImportService] Usando clasificación MET: " + tipoArt);
             }
 
             Genre genero = crearOFindGenero(tipoArt);
@@ -162,7 +350,7 @@ public class ArtImportService {
                 obraGuardada.getImagenUrl()
             );
             response.setClasificacionSugeridaIA(clasificacionSugeridaIA != null ? clasificacionSugeridaIA : tipoArt);
-            if (ollamaData.getAttributes() != null) {
+            if (ollamaData != null && ollamaData.getAttributes() != null) {
                 response.setDetallesExtraidos(mapearDetalles(ollamaData.getAttributes()));
             }
             return response;
@@ -179,10 +367,29 @@ public class ArtImportService {
         }
         Artist nuevo = new Artist();
         nuevo.setNombre(nombre);
-        nuevo.setNacionalidad("Internacional");
-        nuevo.setBiografia("Artista importado desde MET Museum");
-        nuevo.setFechaNacimiento(java.time.LocalDate.of(1800, 1, 1));
+
+        // Consultar Wikidata para datos reales
+        java.util.Map<String, String> datosWikidata = wikidataService.obtenerDatosArtista(nombre);
+
+        String nationality = datosWikidata.get("nationality");
+        String birthDateStr = datosWikidata.get("birthDate");
+        String description = datosWikidata.get("description");
+
+        nuevo.setNacionalidad(nationality != null ? nationality : "Internacional");
+
+        if (birthDateStr != null && birthDateStr.matches("\\d{4}")) {
+            try {
+                nuevo.setFechaNacimiento(java.time.LocalDate.of(Integer.parseInt(birthDateStr), 1, 1));
+            } catch (Exception e) {
+                nuevo.setFechaNacimiento(java.time.LocalDate.of(1800, 1, 1));
+            }
+        } else {
+            nuevo.setFechaNacimiento(java.time.LocalDate.of(1800, 1, 1));
+        }
+
+        nuevo.setBiografia(description != null ? description : "Artista importado desde MET Museum");
         nuevo.setPorcentajeGanancia(10.0);
+
         return artistRepository.save(nuevo);
     }
 
@@ -342,7 +549,7 @@ public class ArtImportService {
         return switch (genre.trim().toLowerCase()) {
             case "painting" -> "Pintura";
             case "sculpture" -> "Escultura";
-            case "orphebrery" -> "Orfebrería";
+            case "orfebrery" -> "Orfebrería";
             case "photograph" -> "Fotografía";
             case "ceramic" -> "Cerámica";
             default -> null;

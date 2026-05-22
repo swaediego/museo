@@ -42,7 +42,7 @@ services:
       resources:
         reservations:
           memory: 4G
-    entrypoint: 
+    entrypoint:
       - /bin/sh
       - -c
       - "ollama serve & sleep 5 && ollama pull llama3 && wait"
@@ -63,6 +63,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/galeria_catalog
+      - OLLAMA_URL=http://ollama-ai-service:11434/api/generate
 
 volumes:
   galeria_db_data:
