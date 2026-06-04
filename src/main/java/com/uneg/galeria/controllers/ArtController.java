@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -157,6 +158,20 @@ public  class ArtController {
         }
         artService.eliminarObra(id);
         return ResponseEntity.noContent().build();
+    }
+
+    //9b. Actualizar únicamente el precio de una obra (Postgres + MongoDB)
+    @PatchMapping("/{id}/precio")
+    public ResponseEntity<?> actualizarPrecio(@PathVariable Long id, @RequestBody Map<String, Double> body) {
+        try {
+            Double nuevoPrecio = body != null ? body.get("precio") : null;
+            Art art = artService.actualizarPrecio(id, nuevoPrecio);
+            return ResponseEntity.ok(art);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     //10. Filtrar por estatus

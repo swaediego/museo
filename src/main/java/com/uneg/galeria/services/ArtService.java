@@ -28,4 +28,7 @@ public interface ArtService {
     void reservarObra(Long obraId, Long compradorId, String securityCode);
 
     Art cancelarReserva(Long artId);
+
+    // Actualizar únicamente el precio de una obra (Postgres + MongoDB)
+    Art actualizarPrecio(Long id, Double nuevoPrecio);
 }

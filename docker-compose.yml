@@ -4,16 +4,16 @@ services:
     container_name: postgres-spring-boot
     restart: always
     environment:
-      POSTGRES_USER: Miguel
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: museo_db
+      POSTGRES_USER: ${POSTGRES_USER:-Miguel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-museo_db}
     ports:
-      - "5332:5432"
+      - "${POSTGRES_PORT:-5332}:5432"
     volumes:
       - galeria_db_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U Miguel -d museo_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-Miguel} -d ${POSTGRES_DB:-museo_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,9 +24,9 @@ services:
     container_name: mongodb-galeria
     restart: always
     environment:
-      MONGO_INITDB_DATABASE: galeria_catalog
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-galeria_catalog}
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
 
@@ -35,7 +35,7 @@ services:
     container_name: ollama-ai-service
     restart: always
     ports:
-      - "11434:11434"
+      - "${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollama_data:/root/.ollama
     deploy:
@@ -51,19 +51,34 @@ services:
     build: .
     container_name: galeria-app-backend
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       db:
         condition: service_healthy
       mongodb:
         condition: service_started
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/museo_db
-      - SPRING_DATASOURCE_USERNAME=Miguel
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-museo_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-Miguel}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/galeria_catalog
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/${MONGO_DB:-galeria_catalog}
       - OLLAMA_URL=http://ollama-ai-service:11434/api/generate
+
+  # Frontend Next.js (opcional: comentá este bloque si preferís correrlo con npm run dev)
+  frontend:
+    build:
+      context: ../galeria-art-frontend
+      dockerfile: Dockerfile
+    container_name: galeria-app-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
 
 volumes:
   galeria_db_data:

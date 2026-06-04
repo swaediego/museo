@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 public class ArtServiceImpl implements ArtService {
@@ -192,5 +194,28 @@ public class ArtServiceImpl implements ArtService {
 
         doc.setDetallesEspecificos(detalles);
         catalogService.save(doc);
+    }
+
+    @Override
+    @Transactional
+    public Art actualizarPrecio(Long id, Double nuevoPrecio) {
+        if (nuevoPrecio == null || nuevoPrecio.isNaN() || nuevoPrecio.isInfinite() || nuevoPrecio <= 0) {
+            throw new IllegalArgumentException("El precio debe ser un número mayor a 0.");
+        }
+        // Redondear a 2 decimales
+        BigDecimal bd = new BigDecimal(nuevoPrecio).setScale(2, RoundingMode.HALF_UP);
+        Double precioRedondeado = bd.doubleValue();
+
+        Art obra = artRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Obra no encontrada con ID: " + id));
+
+        if (!"Disponible".equalsIgnoreCase(obra.getEstatus())) {
+            throw new RuntimeException("Solo se puede modificar el precio de obras Disponibles. Estatus actual: " + obra.getEstatus());
+        }
+
+        obra.setPrecioBase(precioRedondeado);
+        Art saved = artRepository.save(obra);
+        syncToMongo(saved); // sincroniza Postgres → MongoDB
+        return saved;
     }
 }
