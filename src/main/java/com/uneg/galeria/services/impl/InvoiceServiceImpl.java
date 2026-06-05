@@ -6,11 +6,17 @@ import com.uneg.galeria.repositories.*;
 import com.uneg.galeria.services.ArtService;
 import com.uneg.galeria.services.CatalogService;
 import com.uneg.galeria.services.InvoiceService;
+import com.uneg.galeria.history.event.EstatusCambiadoEvent;
+import com.uneg.galeria.history.event.VentaRegistradaEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +31,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Autowired private AdminRepository adminRepository;
     @Autowired private ArtService artService;
     @Autowired private CatalogService catalogService;
+    @Autowired private ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -79,15 +86,40 @@ public class InvoiceServiceImpl implements InvoiceService {
         artRepository.flush();
         syncObraToMongo(obraGuardada);
 
-        return invoiceRepository.save(factura);
+        Invoice facturaGuardada = invoiceRepository.save(factura);
+
+        // Bitácora: registrar el cambio de estatus Reservada -> Vendida
+        eventPublisher.publishEvent(new EstatusCambiadoEvent(
+            obra.getId().intValue(),
+            "Art",
+            "Reservada",
+            "Vendida",
+            "system",
+            Instant.now()
+        ));
+
+        eventPublisher.publishEvent(new VentaRegistradaEvent(
+            facturaGuardada.getId().intValue(),
+            obra.getId().intValue(),
+            comprador.getId().intValue(),
+            BigDecimal.valueOf(factura.getSubtotal()),
+            BigDecimal.valueOf(factura.getIva()),
+            "TARJETA",
+            "COMPLETADA",
+            facturaGuardada.getFechaVenta().atZone(ZoneId.systemDefault()).toInstant()
+        ));
+
+        return facturaGuardada;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Invoice> listarVentasPorPeriodo(LocalDateTime inicio, LocalDateTime fin) {
         return invoiceRepository.findByFechaVentaBetween(inicio, fin);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Double calcularTotalRecaudado(LocalDateTime inicio, LocalDateTime fin) {
         Double total = listarVentasPorPeriodo(inicio, fin).stream()
                 .mapToDouble(Invoice::getTotal)
@@ -96,11 +128,13 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Invoice> obtenerTodas() {
         return invoiceRepository.findAll();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> obtenerHistorialUsuario(Long compradorId) {
         // Validar que el comprador exista
         if (!buyerRepository.existsById(compradorId)) {
@@ -118,6 +152,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Invoice> obtenerFacturaPorId(Long id) {
         return invoiceRepository.findById(id);
     }

@@ -12,6 +12,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/catalog")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 public class CatalogController {
 
     private final CatalogService catalogService;

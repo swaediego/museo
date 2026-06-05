@@ -35,7 +35,7 @@ INSERT INTO artist (nombre, biografia, nacionalidad, fecha_nacimiento, porcentaj
     ('Leonardo da Vinci', 'Artista del Renacimiento italiano.',                    'Italiano',       '1452-04-15', 9.50),
     ('Auguste Rodin',     'Escultor francés, padre de la escultura moderna.',      'Francés',        '1840-11-12', 9.00),
     ('Ansel Adams',       'Fotógrafo y ambientalista estadounidense.',            'Estadounidense', '1902-02-20', 7.50)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (nombre) DO NOTHING;
 
 -- 5. OBRAS DE ARTE (asumiendo artistas y géneros ya cargados) -------------
 -- Obra 1: La Noche Estrellada (Pintura, van Gogh)

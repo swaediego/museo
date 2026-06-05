@@ -30,6 +30,25 @@ services:
     volumes:
       - mongodb_data:/data/db
 
+  cassandra:
+    image: cassandra:5.0
+    container_name: cassandra-galeria
+    restart: always
+    environment:
+      CASSANDRA_CLUSTER_NAME: galeria-cluster
+      CASSANDRA_DC: DC1
+      CASSANDRA_RACK: RAC1
+    ports:
+      - "${CASSANDRA_PORT:-9042}:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   ollama:
     image: ollama/ollama:latest
     container_name: ollama-ai-service
@@ -57,12 +76,18 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_started
+      cassandra:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-museo_db}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-Miguel}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/${MONGO_DB:-galeria_catalog}
+      - SPRING_DATA_CASSANDRA_CONTACT_POINTS=cassandra:9042
+      - SPRING_DATA_CASSANDRA_LOCAL_DATACENTER=datacenter1
+      - SPRING_DATA_CASSANDRA_KEYSPACE_NAME=museo_history
+      - SPRING_DATA_CASSANDRA_SCHEMA_ACTION=CREATE_IF_NOT_EXISTS
       - OLLAMA_URL=http://ollama-ai-service:11434/api/generate
 
   # Frontend Next.js (opcional: comentá este bloque si preferís correrlo con npm run dev)
@@ -84,3 +109,4 @@ volumes:
   galeria_db_data:
   mongodb_data:
   ollama_data:
+  cassandra_data:

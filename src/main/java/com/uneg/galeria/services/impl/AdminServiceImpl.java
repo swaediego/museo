@@ -4,6 +4,8 @@ import com.uneg.galeria.models.Admin;
 import com.uneg.galeria.repositories.AdminRepository;
 import com.uneg.galeria.repositories.UserRepository;
 import com.uneg.galeria.services.AdminService;
+import com.uneg.galeria.models.Cargo;
+import com.uneg.galeria.repositories.CargoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,9 @@ public class AdminServiceImpl implements AdminService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CargoRepository cargoRepository;
+
     @Override
     public Admin registrarAdmin(Admin admin) {
         if (admin.getLogin() == null || !admin.getLogin().matches("^[a-zA-Z0-9_]{3,50}$")) {
@@ -30,6 +35,20 @@ public class AdminServiceImpl implements AdminService {
         if (admin.getRol() == null) {
             admin.setRol("SECUNDARIO");
         }
+
+        // Resolve cargo if id is null but name is present (for string cargo registration)
+        if (admin.getCargo() != null && admin.getCargo().getId() == null && admin.getCargo().getNombre() != null) {
+            String cargoNombre = admin.getCargo().getNombre();
+            Cargo resolvedCargo = cargoRepository.findByNombre(cargoNombre)
+                    .orElseGet(() -> {
+                        Cargo newCargo = new Cargo();
+                        newCargo.setNombre(cargoNombre);
+                        newCargo.setDescripcion("Cargo creado dinámicamente");
+                        return cargoRepository.save(newCargo);
+                    });
+            admin.setCargo(resolvedCargo);
+        }
+
         return adminRepository.save(admin);
     }
 
@@ -52,8 +71,9 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("Solicitante no encontrado"));
 
         boolean isEditingSelf = requesterId.equals(id);
+        boolean isRequesterPrincipal = "PRINCIPAL".equals(requester.getRol());
 
-        if (isEditingSelf) {
+        if (isEditingSelf || isRequesterPrincipal) {
             if (updatedAdmin.getLogin() != null) {
                 if (userRepository.findByLogin(updatedAdmin.getLogin()).isPresent()
                         && !target.getLogin().equals(updatedAdmin.getLogin())) {
@@ -65,10 +85,24 @@ public class AdminServiceImpl implements AdminService {
             if (updatedAdmin.getApellido() != null) target.setApellido(updatedAdmin.getApellido());
             if (updatedAdmin.getEmail() != null) target.setEmail(updatedAdmin.getEmail());
             if (updatedAdmin.getTelefono() != null) target.setTelefono(updatedAdmin.getTelefono());
-            if (updatedAdmin.getCargo() != null) target.setCargo(updatedAdmin.getCargo());
-        } else {
+            if (updatedAdmin.getCargo() != null) {
+                Cargo cargo = updatedAdmin.getCargo();
+                if (cargo.getId() == null && cargo.getNombre() != null) {
+                    cargo = cargoRepository.findByNombre(cargo.getNombre())
+                            .orElseGet(() -> {
+                                Cargo newCargo = new Cargo();
+                                newCargo.setNombre(updatedAdmin.getCargo().getNombre());
+                                newCargo.setDescripcion("Cargo creado dinámicamente");
+                                return cargoRepository.save(newCargo);
+                            });
+                }
+                target.setCargo(cargo);
+            }
+        }
+
+        if (!isEditingSelf) {
             if (updatedAdmin.getRol() != null) {
-                if (!"PRINCIPAL".equals(requester.getRol())) {
+                if (!isRequesterPrincipal) {
                     throw new RuntimeException("Solo un administrador principal puede cambiar el rol de otros.");
                 }
 

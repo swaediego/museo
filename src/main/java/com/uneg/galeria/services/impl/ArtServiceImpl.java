@@ -11,9 +11,13 @@ import com.uneg.galeria.models.Painting;
 import com.uneg.galeria.models.Sculpture;
 import com.uneg.galeria.repositories.ArtRepository;
 import com.uneg.galeria.repositories.BuyerRepository;
+import com.uneg.galeria.history.event.EstatusCambiadoEvent;
+import com.uneg.galeria.history.event.ObraEliminadaEvent;
+import com.uneg.galeria.history.event.PrecioActualizadoEvent;
 import com.uneg.galeria.services.ArtService;
 import com.uneg.galeria.services.CatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 
 @Service
 public class ArtServiceImpl implements ArtService {
@@ -35,6 +40,9 @@ public class ArtServiceImpl implements ArtService {
 
     @Autowired
     private CatalogService catalogService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -92,6 +100,15 @@ public class ArtServiceImpl implements ArtService {
     @Override
     @Transactional
     public void eliminarObra(Long id) {
+        Art obra = artRepository.findById(id).orElse(null);
+        if (obra != null) {
+            eventPublisher.publishEvent(new ObraEliminadaEvent(
+                id.intValue(),
+                obra.getNombre(),
+                "admin",
+                Instant.now()
+            ));
+        }
         artRepository.deleteById(id);
         catalogService.deleteByIdRelacional(id);
     }
@@ -118,6 +135,15 @@ public class ArtServiceImpl implements ArtService {
         obra.setCompradorReserva(comprador);
         Art saved = artRepository.save(obra);
         syncToMongo(saved);
+
+        eventPublisher.publishEvent(new EstatusCambiadoEvent(
+            saved.getId().intValue(),
+            "Art",
+            "Disponible",
+            "Reservada",
+            "system",
+            Instant.now()
+        ));
     }
 
     @Override
@@ -135,6 +161,15 @@ public class ArtServiceImpl implements ArtService {
 
         Art saved = artRepository.save(obra);
         syncToMongo(saved);
+
+        eventPublisher.publishEvent(new EstatusCambiadoEvent(
+            saved.getId().intValue(),
+            "Art",
+            "Reservada",
+            "Disponible",
+            "system",
+            Instant.now()
+        ));
         return saved;
     }
 
@@ -213,9 +248,20 @@ public class ArtServiceImpl implements ArtService {
             throw new RuntimeException("Solo se puede modificar el precio de obras Disponibles. Estatus actual: " + obra.getEstatus());
         }
 
+        Double precioAnterior = obra.getPrecioBase();
         obra.setPrecioBase(precioRedondeado);
         Art saved = artRepository.save(obra);
         syncToMongo(saved); // sincroniza Postgres → MongoDB
+
+        eventPublisher.publishEvent(new PrecioActualizadoEvent(
+            saved.getId().intValue(),
+            BigDecimal.valueOf(precioAnterior),
+            BigDecimal.valueOf(precioRedondeado),
+            "Actualizacion de precio via API",
+            "admin",
+            Instant.now()
+        ));
+
         return saved;
     }
 }
