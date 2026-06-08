@@ -17,4 +17,29 @@ public class Admin extends User {
 
     @Column
     private String rol;
+
+    @Transient
+    public void setIdCargo(Long idCargo) {
+        if (idCargo != null) {
+            if (this.cargo == null) {
+                this.cargo = new Cargo();
+            }
+            this.cargo.setId(idCargo);
+        }
+    }
+
+    @Transient
+    public void setCargo(String cargoNombre) {
+        if (cargoNombre != null) {
+            if (this.cargo == null) {
+                this.cargo = new Cargo();
+            }
+            this.cargo.setNombre(cargoNombre);
+        }
+    }
+
+    @Transient
+    public void setCargo(Cargo cargo) {
+        this.cargo = cargo;
+    }
 }
