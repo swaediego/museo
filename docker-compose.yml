@@ -34,7 +34,10 @@ services:
     image: cassandra:5.0
     container_name: cassandra-galeria
     restart: always
+    mem_limit: 2g
     environment:
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 256M
       CASSANDRA_CLUSTER_NAME: galeria-cluster
       CASSANDRA_DC: DC1
       CASSANDRA_RACK: RAC1
