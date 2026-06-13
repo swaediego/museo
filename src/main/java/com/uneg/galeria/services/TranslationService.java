@@ -48,7 +48,42 @@ public class TranslationService {
     }
 
     public String spanishToEnglish(String spanishText) {
-        return traducir(spanishText, "es", "en");
+        // =============================================================================
+        // Quien/Nombre: Diego Torrelles
+        // Que/descripcion: No traducir textos que parecen nombres propios de obras de arte.
+        //   MyMemory destruye artículos como "la" en tahitiano/gallego, convirtiendo
+        //   "la Orana Maria" → "orana maria". Si el texto tiene palabras que empiezan con
+        //   mayúscula en posiciones intermedias (tipo título propio), se devuelve sin
+        //   modificar para que la búsqueda en MET funcione correctamente.
+        // Cuando/fecha: 2026-06-09
+        // =============================================================================
+        if (spanishText == null || spanishText.isBlank()) {
+            return spanishText;
+        }
+        // Detectar título propio: si hay2+ palabras con mayúscula sostenida (no solo
+        // la primera letra de la oración), es probable que sea un nombre de obra/artista.
+        String trimmed = spanishText.trim();
+        long capitalWords = trimmed.codePoints().filter(cp -> {
+            if (Character.isUpperCase(cp)) {
+                int idx = trimmed.indexOf(cp);
+                return idx > 0 && Character.isLetter(trimmed.charAt(idx - 1));
+            }
+            return false;
+        }).count();
+        if (capitalWords >= 2) {
+            System.out.println("[TranslationService] Nombre propio detectado, no traduzco: " + trimmed);
+            return trimmed;
+        }
+        String translated = traducir(trimmed, "es", "en");
+        // Si MyMemory eliminó artículos importantes ("la orana" → "orana"), devolver original
+        if (trimmed.toLowerCase().startsWith("la ") && translated.toLowerCase().startsWith("la ")
+            && trimmed.toLowerCase().contains("orana")) {
+            // Ok, la traducción preservó "la"
+        } else if (trimmed.toLowerCase().startsWith("la ") && !translated.toLowerCase().startsWith("la ")) {
+            System.out.println("[TranslationService] MyMemory eliminó 'la', devuelvo original: " + trimmed);
+            return trimmed;
+        }
+        return translated;
     }
 
     public String englishToSpanish(String englishText) {

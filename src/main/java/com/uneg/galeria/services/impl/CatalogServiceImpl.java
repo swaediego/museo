@@ -77,14 +77,16 @@ public List<ArtCatalogDocument> filterByPrecioGeneroEstatus(Double precioMin, Do
 
         if (estatus != null && !estatus.isEmpty()) {
             operations.add(match(where("estatus").is(estatus)));
-        } else {
-            operations.add(match(where("estatus").nin("Vendida", "Vendido")));
         }
 
         if ("precioAsc".equalsIgnoreCase(sortBy)) {
             operations.add(Aggregation.sort(Sort.Direction.ASC, "precio"));
         } else if ("precioDesc".equalsIgnoreCase(sortBy)) {
             operations.add(Aggregation.sort(Sort.Direction.DESC, "precio"));
+        }
+
+        if (operations.isEmpty()) {
+            return repository.findAll();
         }
 
         Aggregation aggregation = newAggregation(operations);

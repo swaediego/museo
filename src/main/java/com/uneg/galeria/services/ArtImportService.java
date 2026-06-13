@@ -29,11 +29,26 @@ public class ArtImportService {
     @Autowired
     private MetMuseumService metMuseumService;
 
+    // =============================================================================
+    // MODIFICADO por Diego Torrelles (2026-06-10)
+    // Cambio: Reemplazado RijksmuseumService por ArtInstituteChicagoService
+    // (API libre sin key) y HarvardArtMuseumsService por WikidataArtService
+    // (SPARQL endpoint público, sin key).
+    // =============================================================================
     @Autowired
-    private RijksmuseumService rijksmuseumService;
+    private ArtInstituteChicagoService artInstituteService;
 
     @Autowired
-    private HarvardArtMuseumsService harvardService;
+    private WikidataArtService wikidataArtService;
+
+    // =============================================================================
+    // MODIFICADO por Diego Torrelles (2026-06-10)
+    // Cambio: Agregado WikimediaCommonsService como fuente补充aria.
+    // API REST pública (100% libre, sin key). Útil para obras que no están en
+    // MET ni Art Institute (ej: "The Starry Night" de Van Gogh).
+    // =============================================================================
+    @Autowired
+    private WikimediaCommonsService wikimediaCommonsService;
 
     @Autowired
     private ArtistRepository artistRepository;
@@ -77,28 +92,67 @@ public class ArtImportService {
 
         for (int i = 0; i < limite; i++) {
             MetMuseumService.MetArtResponse art = metMuseumService.getObject(objectIds.get(i));
-            if (art != null && art.getPrimaryImage() != null && !art.getPrimaryImage().isBlank()) {
+            // =============================================================================
+            // MODIFICADO por Diego Torrelles (2026-06-09)
+            // Fix: antes se saltaba el resultado si no tenía imagen. Ahora, si los
+            // primeros resultados no tienen imagen, seguimos buscando más allá del
+            // límite de10. Esto resuelve el caso de "Ia Orana Maria" donde los
+            // primeros 10 resultados en el ranking de MET no tienen imagen disponible.
+            // =============================================================================
+            if (art == null) continue;
+            String imageUrl = art.getPrimaryImage();
+            if (imageUrl == null || imageUrl.isBlank()) {
+                // Este no tiene imagen — guardamos el índice y seguimos buscando más
+                continue;
+            }
+            resultadosSet.add(MetSearchResult.from(
+                art.getObjectID(),
+                art.getTitle(),
+                art.getArtistDisplayName(),
+                imageUrl,
+                art.getClassification()
+            ));
+        }
+        // Si después de iterar los primeros 'limite' no encontramos resultados con
+        // imagen, intentamos con los siguientes del pool de50
+        if (resultadosSet.isEmpty() && objectIds.size() > limite) {
+            System.out.println("[ArtImportService] Primeros " + limite + " sin imagen, buscando en siguientes...");
+            int start = limite;
+            int extendedLimit = Math.min(objectIds.size(), 50);
+            for (int i = start; i < extendedLimit; i++) {
+                MetMuseumService.MetArtResponse art = metMuseumService.getObject(objectIds.get(i));
+                if (art == null) continue;
+                String imageUrl = art.getPrimaryImage();
+                if (imageUrl == null || imageUrl.isBlank()) continue;
                 resultadosSet.add(MetSearchResult.from(
                     art.getObjectID(),
                     art.getTitle(),
                     art.getArtistDisplayName(),
-                    art.getPrimaryImage(),
+                    imageUrl,
                     art.getClassification()
                 ));
+                if (resultadosSet.size() >= 5) break; // 5 resultados con imagen son suficientes
             }
         }
         System.out.println("[ArtImportService] MET: " + resultadosSet.size() + " resultados");
 
         // 2. SIEMPRE buscar también en fuentes alternativas (no solo si MET falla)
-        System.out.println("[ArtImportService] Buscando en Rijksmuseum y Harvard...");
+        // =============================================================================
+        // MODIFICADO por Diego Torrelles (2026-06-10)
+        // Cambio: Agregada búsqueda en Wikimedia Commons como fuente补充aria.
+        // Esta fuente es clave para obras famosas ausentes en MET / Art Institute.
+        // =============================================================================
+        System.out.println("[ArtImportService] Buscando en Art Institute, Harvard y Wikimedia...");
         if (artista != null && !artista.isBlank()) {
             buscarEnRijksmuseum(busquedaIngles, artista, resultadosSet, 5);
             buscarEnHarvard(busquedaIngles, artista, resultadosSet, 5);
+            buscarEnWikimedia(busquedaIngles, artista, resultadosSet, 5);
         }
         // Si no tenemos resultados aún, buscar sin artista
         if (resultadosSet.isEmpty() || resultadosSet.size() < 3) {
             buscarEnRijksmuseum(busquedaIngles, null, resultadosSet, 5);
             buscarEnHarvard(busquedaIngles, null, resultadosSet, 5);
+            buscarEnWikimedia(busquedaIngles, null, resultadosSet, 5);
         }
         System.out.println("[ArtImportService] Total tras todas las fuentes: " + resultadosSet.size() + " resultados");
 
@@ -181,33 +235,41 @@ public class ArtImportService {
         return new ArrayList<>(sugerencias);
     }
 
+    // =============================================================================
+    // MODIFICADO por Diego Torrelles (2026-06-10)
+    // Cambio: Usa ArtInstituteChicagoService en vez de RijksmuseumService.
+    // =============================================================================
     private void buscarEnRijksmuseum(String query, String artistName, java.util.Set<MetSearchResult> resultados, int limite) {
         try {
-            List<RijksmuseumService.RijksmuseumResult> rijksResults = 
-                rijksmuseumService.search(query, artistName);
-            
-            for (int i = 0; i < Math.min(rijksResults.size(), limite); i++) {
-                RijksmuseumService.RijksmuseumResult r = rijksResults.get(i);
+            List<ArtInstituteChicagoService.ArtInstituteResult> aicResults =
+                artInstituteService.search(query, artistName);
+
+            for (int i = 0; i < Math.min(aicResults.size(), limite); i++) {
+                ArtInstituteChicagoService.ArtInstituteResult r = aicResults.get(i);
                 resultados.add(MetSearchResult.fromRijksmuseum(
                     r.getTitulo(),
                     r.getArtista(),
                     r.getImagenUrl(),
                     r.getClasificacion(),
-                    r.getObjectNumber()
+                    r.getId()
                 ));
             }
         } catch (Exception e) {
-            System.err.println("Error en búsqueda Rijksmuseum: " + e.getMessage());
+            System.err.println("Error en búsqueda Art Institute of Chicago: " + e.getMessage());
         }
     }
 
+    // =============================================================================
+    // MODIFICADO por Diego Torrelles (2026-06-10)
+    // Cambio: Usa WikidataArtService en vez de HarvardArtMuseumsService.
+    // =============================================================================
     private void buscarEnHarvard(String query, String artistName, java.util.Set<MetSearchResult> resultados, int limite) {
         try {
-            List<HarvardArtMuseumsService.HarvardResult> harvardResults = 
-                harvardService.search(query, artistName);
-            
-            for (int i = 0; i < Math.min(harvardResults.size(), limite); i++) {
-                HarvardArtMuseumsService.HarvardResult h = harvardResults.get(i);
+            List<WikidataArtService.WikidataResult> wikidataResults =
+                wikidataArtService.search(query, artistName);
+
+            for (int i = 0; i < Math.min(wikidataResults.size(), limite); i++) {
+                WikidataArtService.WikidataResult h = wikidataResults.get(i);
                 resultados.add(MetSearchResult.fromHarvard(
                     h.getTitulo(),
                     h.getArtista(),
@@ -217,7 +279,33 @@ public class ArtImportService {
                 ));
             }
         } catch (Exception e) {
-            System.err.println("Error en búsqueda Harvard: " + e.getMessage());
+            System.err.println("Error en búsqueda Wikidata: " + e.getMessage());
+        }
+    }
+
+    // =============================================================================
+    // CREADO por Diego Torrelles (2026-06-10)
+    // Busca en Wikimedia Commons para obras ausentes en MET / Art Institute.
+    // API REST pública, sin autenticación. Útil para obras famosas como
+    // "The Starry Night" de Van Gogh que solo existen en Wikimedia.
+    // =============================================================================
+    private void buscarEnWikimedia(String query, String artistName, java.util.Set<MetSearchResult> resultados, int limite) {
+        try {
+            List<WikimediaCommonsService.WikimediaResult> wikiResults =
+                wikimediaCommonsService.search(query, artistName);
+
+            for (int i = 0; i < Math.min(wikiResults.size(), limite); i++) {
+                WikimediaCommonsService.WikimediaResult w = wikiResults.get(i);
+                resultados.add(MetSearchResult.fromWikimedia(
+                    w.getTitulo(),
+                    w.getArtista(),
+                    w.getImagenUrl(),
+                    w.getClasificacion(),
+                    w.getId()
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("Error en búsqueda Wikimedia Commons: " + e.getMessage());
         }
     }
 

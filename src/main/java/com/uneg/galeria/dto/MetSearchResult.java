@@ -11,7 +11,7 @@ public class MetSearchResult {
     private String artista;
     private String imagenUrl;
     private String clasificacion;
-    private String fuente;       // "MET", "Rijksmuseum", "Harvard"
+    private String fuente;       // "MET", "Rijksmuseum", "Harvard", "Wikimedia"
     private String fuenteId;     // ID de la fuente alternativa (String)
 
     @Override
@@ -60,6 +60,23 @@ public class MetSearchResult {
         r.imagenUrl = imagenUrl;
         r.clasificacion = clasificacion;
         r.fuente = "Harvard";
+        r.fuenteId = id;
+        return r;
+    }
+
+    // =============================================================================
+    // CREADO por Diego Torrelles (2026-06-10)
+    // Fuente: Wikimedia Commons — API REST pública, sin autenticación.
+    // Útil para obras famosas ausentes en MET / Art Institute (ej: "The Starry Night").
+    // =============================================================================
+    public static MetSearchResult fromWikimedia(String titulo, String artista, String imagenUrl,
+                                                 String clasificacion, String id) {
+        MetSearchResult r = new MetSearchResult();
+        r.titulo = titulo;
+        r.artista = artista;
+        r.imagenUrl = imagenUrl;
+        r.clasificacion = clasificacion;
+        r.fuente = "Wikimedia";
         r.fuenteId = id;
         return r;
     }

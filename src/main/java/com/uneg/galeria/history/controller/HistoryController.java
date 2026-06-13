@@ -93,6 +93,11 @@ public class HistoryController {
         return ventas.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(ventas);
     }
 
+    @GetMapping("/stats/count")
+    public ResponseEntity<Long> totalCambiosPrecio() {
+        return ResponseEntity.ok(precioRepo.count());
+    }
+
     @GetMapping("/precios/{idRelacional}/csv")
     public ResponseEntity<String> exportarPreciosCsv(@PathVariable Integer idRelacional) {
         List<HistorialPrecio> historial = precioRepo.findByIdRelacional(idRelacional);
